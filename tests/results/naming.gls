@@ -1,5 +1,0 @@
-(gl-break-silence 'Hiiii!')
-(if empty? (begin
-    ))
-(effectful! 'Effects!')
-(! condition?)
