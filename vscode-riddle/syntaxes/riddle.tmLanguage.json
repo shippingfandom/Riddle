@@ -109,7 +109,7 @@
       "patterns": [
         {
           "name": "meta.function.riddle",
-          "match": "\\b(defun|function)\\s+([a-zA-Z_][a-zA-Z0-9_.]*)\\s*\\(",
+          "match": "\\b(defun|function)\\s+([a-zA-Z_][a-zA-Z0-9_.!?]*(?:\\-[a-zA-Z_!?][a-zA-Z0-9_.!?\\-]*)*)\\s*\\(",
           "captures": {
             "1": { "name": "keyword.control.defun.riddle" },
             "2": { "name": "entity.name.function.riddle" }
@@ -120,7 +120,7 @@
     "function-call": {
       "patterns": [
         {
-          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "match": "([a-zA-Z_][a-zA-Z0-9_!?]*(?:\\-[a-zA-Z_!?][a-zA-Z0-9_!?\\-]*)*)\\s*\\(",
           "captures": {
             "1": { "name": "support.function.any-method.riddle" }
           }
@@ -131,7 +131,7 @@
       "patterns": [
         {
           "name": "meta.function.anonymous.riddle",
-          "match": "(?:(glosure)|(lambda)|(function))\\s*\\(([a-zA-Z_][a-zA-Z0-9_]*(?:\\s*,\\s*[a-zA-Z_][a-zA-Z0-9_]*)*)\\s*\\)",
+          "match": "(?:(glosure)|(lambda)|(function))\\s*\\(([a-zA-Z_][a-zA-Z0-9_!?]*(?:\\-[a-zA-Z_!?][a-zA-Z0-9_!?\\-]*)*(?:\\s*,\\s*[a-zA-Z_][a-zA-Z0-9_!?]*(?:\\-[a-zA-Z_!?][a-zA-Z0-9_!?\\-]*)*)*)\\s*\\)",
           "captures": {
             "1": { "name": "keyword.control.glosure.riddle" },
             "2": { "name": "keyword.control.lambda.riddle" },
@@ -142,7 +142,7 @@
       ]
     },
     "identifier": {
-      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_!?]*(?:\\-[a-zA-Z_!?][a-zA-Z0-9_!?\\-]*)*",
       "name": "variable.other.riddle"
     }
   }
