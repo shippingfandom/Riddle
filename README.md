@@ -1,2 +1,2 @@
 # Riddle
-An imperative programming language transpiled to Glosure!
+A programming language transpiled to Glosure!
