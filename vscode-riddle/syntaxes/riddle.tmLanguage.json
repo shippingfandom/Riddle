@@ -28,12 +28,6 @@
           "begin": "\"",
           "end": "\"",
           "patterns": [{ "name": "constant.character.escape.riddle", "match": "\\\\." }]
-        },
-        {
-          "name": "string.quoted.single.riddle",
-          "begin": "'",
-          "end": "'",
-          "patterns": [{ "name": "constant.character.escape.riddle", "match": "\\\\." }]
         }
       ]
     },
