@@ -16,6 +16,9 @@ statement: simple_stmt ";"
          | if_stmt
          | block
          | COMMENT
+         | bare_stmt
+
+bare_stmt: NUMBER | STRING | BOOL | NULL | glosure_anon | lambda_anon | array_literal | dict_literal
 
 simple_stmt: assignment
             | expr
@@ -101,7 +104,7 @@ param_list: [param ("," param)*]
 param: NAME ("=" expr)?
 
 NUMBER: /[0-9]+/
-STRING: /"[^"]*"/
+STRING: /"(?:[^"\\]|\\.)*"/
 BOOL: "true" | "false"
 NULL: "null"
 NAME: /[a-zA-Z_][a-zA-Z0-9_!?]*(?:-[a-zA-Z_!?][a-zA-Z0-9_!?\-]*)*/
@@ -129,7 +132,7 @@ class RiddleToGlosure:
         if token.type == "NUMBER":
             return token.value
         elif token.type == "STRING":
-            return "'" + token.value[1:-1] + "'"
+            return self._escape_string(token.value[1:-1])
         elif token.type == "BOOL":
             return token.value
         elif token.type == "NAME":
@@ -140,11 +143,34 @@ class RiddleToGlosure:
             return ";;" + token.value[2:]
         return str(token)
 
+    def _escape_string(self, s):
+        result = []
+        i = 0
+        while i < len(s):
+            if s[i] == "\\" and i + 1 < len(s):
+                if s[i + 1] == '"':
+                    result.append('"')
+                elif s[i + 1] == "\\":
+                    result.append("\\\\")
+                else:
+                    result.append(s[i : i + 2])
+                i += 2
+            elif s[i] == "'":
+                result.append("\\'")
+                i += 1
+            else:
+                result.append(s[i])
+                i += 1
+        return "'" + "".join(result) + "'"
+
     def _visit_program(self, node):
         lines = [self._visit(c) for c in node.children]
         return "\n".join(lines)
 
     def _visit_statement(self, node):
+        return self._visit(node.children[0])
+
+    def _visit_bare_stmt(self, node):
         return self._visit(node.children[0])
 
     def _visit_simple_stmt(self, node):
@@ -343,7 +369,7 @@ class RiddleToGlosure:
         child = node.children[0]
         if isinstance(child, Token):
             if child.type == "STRING":
-                return "'" + child.value[1:-1] + "'"
+                return self._escape_string(child.value[1:-1])
             return child.value
         return self._visit(child)
 
