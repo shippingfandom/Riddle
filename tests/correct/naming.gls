@@ -2,3 +2,4 @@
 (if empty? (begin
     ))
 (effectful! 'Effects!')
+(! condition?)

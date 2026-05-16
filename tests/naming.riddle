@@ -3,3 +3,4 @@ if empty? {
 
 }
 effectful!("Effects!");
+!condition?;
