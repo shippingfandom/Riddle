@@ -1,0 +1,149 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Riddle",
+  "scopeName": "source.riddle",
+  "fileTypes": ["riddle"],
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#string" },
+    { "include": "#function-definition" },
+    { "include": "#anonymous-function" },
+    { "include": "#keyword" },
+    { "include": "#builtin" },
+    { "include": "#number" },
+    { "include": "#function-call" },
+    { "include": "#operator" },
+    { "include": "#identifier" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comment": {
+      "name": "comment.line.double-slash.riddle",
+      "match": "//.*$"
+    },
+    "string": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.riddle",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [{ "name": "constant.character.escape.riddle", "match": "\\\\." }]
+        },
+        {
+          "name": "string.quoted.single.riddle",
+          "begin": "'",
+          "end": "'",
+          "patterns": [{ "name": "constant.character.escape.riddle", "match": "\\\\." }]
+        }
+      ]
+    },
+    "keyword": {
+      "patterns": [
+        { "match": "\\bif\\b", "name": "keyword.control.if.riddle" },
+        { "match": "\\belif\\b", "name": "keyword.control.elif.riddle" },
+        { "match": "\\belse\\b", "name": "keyword.control.else.riddle" },
+        { "match": "\\bfor\\b", "name": "keyword.control.for.riddle" },
+        { "match": "\\bforeach\\b", "name": "keyword.control.foreach.riddle" },
+        { "match": "\\bwhile\\b", "name": "keyword.control.while.riddle" },
+        { "match": "\\bdefun\\b", "name": "keyword.control.defun.riddle" },
+        { "match": "\\bfunction\\b", "name": "keyword.control.function.riddle" },
+        { "match": "\\breturn\\b", "name": "keyword.control.return.riddle" },
+        { "match": "\\bbreak\\b", "name": "keyword.control.break.riddle" },
+        { "match": "\\bcontinue\\b", "name": "keyword.control.continue.riddle" },
+        { "match": "\\bin\\b", "name": "keyword.control.in.riddle" },
+        { "match": "\\band\\b", "name": "keyword.operator.logical.riddle" },
+        { "match": "\\bor\\b", "name": "keyword.operator.logical.riddle" },
+        { "match": "\\bnot\\b", "name": "keyword.operator.logical.riddle" },
+        { "match": "\\bisa\\b", "name": "keyword.operator.isa.riddle" },
+        { "match": "\\btrue\\b", "name": "constant.language.boolean.true.riddle" },
+        { "match": "\\bfalse\\b", "name": "constant.language.boolean.false.riddle" },
+        { "match": "\\bnull\\b", "name": "constant.language.null.riddle" },
+        { "match": "\\bglosure\\b", "name": "keyword.control.glosure.riddle" },
+        { "match": "\\blambda\\b", "name": "keyword.control.lambda.riddle" }
+      ]
+    },
+    "builtin": {
+      "match": "\\b(print|len|str|int|float|bool|list|dict|keys|values|range|type|input)\\b",
+      "name": "support.function.builtin.riddle"
+    },
+    "number": {
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b",
+      "name": "constant.numeric.riddle"
+    },
+    "operator": {
+      "patterns": [
+        { "match": "\\+", "name": "keyword.operator.arithmetic.riddle" },
+        { "match": "-", "name": "keyword.operator.arithmetic.riddle" },
+        { "match": "\\*", "name": "keyword.operator.arithmetic.riddle" },
+        { "match": "/", "name": "keyword.operator.arithmetic.riddle" },
+        { "match": "%", "name": "keyword.operator.arithmetic.riddle" },
+        { "match": "\\^", "name": "keyword.operator.arithmetic.riddle" },
+        { "match": "==", "name": "keyword.operator.comparison.riddle" },
+        { "match": "!=", "name": "keyword.operator.comparison.riddle" },
+        { "match": "<=", "name": "keyword.operator.comparison.riddle" },
+        { "match": ">=", "name": "keyword.operator.comparison.riddle" },
+        { "match": "<", "name": "keyword.operator.comparison.riddle" },
+        { "match": ">", "name": "keyword.operator.comparison.riddle" },
+        { "match": "&&", "name": "keyword.operator.logical.riddle" },
+        { "match": "\\|\\|", "name": "keyword.operator.logical.riddle" },
+        { "match": "!", "name": "keyword.operator.logical.riddle" },
+        { "match": "=", "name": "keyword.operator.assignment.riddle" },
+        { "match": "->", "name": "keyword.operator.arrow.riddle" }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        { "match": "\\(", "name": "punctuation.parenthesis.open.riddle" },
+        { "match": "\\)", "name": "punctuation.parenthesis.close.riddle" },
+        { "match": "\\{", "name": "punctuation.curly.open.riddle" },
+        { "match": "\\}", "name": "punctuation.curly.close.riddle" },
+        { "match": "\\[", "name": "punctuation.square.open.riddle" },
+        { "match": "\\]", "name": "punctuation.square.close.riddle" },
+        { "match": ";", "name": "punctuation.terminator.riddle" },
+        { "match": ",", "name": "punctuation.delimiter.comma.riddle" },
+        { "match": "\\.", "name": "punctuation.accessor.dot.riddle" },
+        { "match": ":", "name": "punctuation.delimiter.colon.riddle" }
+      ]
+    },
+    "function-definition": {
+      "patterns": [
+        {
+          "name": "meta.function.riddle",
+          "match": "\\b(defun|function)\\s+([a-zA-Z_][a-zA-Z0-9_.]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "keyword.control.defun.riddle" },
+            "2": { "name": "entity.name.function.riddle" }
+          }
+        }
+      ]
+    },
+    "function-call": {
+      "patterns": [
+        {
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "support.function.any-method.riddle" }
+          }
+        }
+      ]
+    },
+    "anonymous-function": {
+      "patterns": [
+        {
+          "name": "meta.function.anonymous.riddle",
+          "match": "(?:(glosure)|(lambda)|(function))\\s*\\(([a-zA-Z_][a-zA-Z0-9_]*(?:\\s*,\\s*[a-zA-Z_][a-zA-Z0-9_]*)*)\\s*\\)",
+          "captures": {
+            "1": { "name": "keyword.control.glosure.riddle" },
+            "2": { "name": "keyword.control.lambda.riddle" },
+            "3": { "name": "keyword.control.function.riddle" },
+            "4": { "name": "variable.parameter.riddle" }
+          }
+        }
+      ]
+    },
+    "identifier": {
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b",
+      "name": "variable.other.riddle"
+    }
+  }
+}

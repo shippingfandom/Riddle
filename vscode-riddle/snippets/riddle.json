@@ -1,0 +1,62 @@
+{
+  "defun": {
+    "prefix": "defun",
+    "body": "defun ${1:name}(${2:params}) {\n\t${3:body}\n}",
+    "description": "Define a function"
+  },
+  "function": {
+    "prefix": "function",
+    "body": "function ${1:name}(${2:params}) {\n\t${3:body}\n}",
+    "description": "Define a function"
+  },
+  "if": {
+    "prefix": "if",
+    "body": "if ${1:condition} {\n\t${2:body}\n}",
+    "description": "If statement"
+  },
+  "ife": {
+    "prefix": "ife",
+    "body": "if ${1:condition} {\n\t${2:body}\n} else {\n\t${3:else_body}\n}",
+    "description": "If-else statement"
+  },
+  "elif": {
+    "prefix": "elif",
+    "body": "elif ${1:condition} {\n\t${2:body}\n}",
+    "description": "Else-if statement"
+  },
+  "for": {
+    "prefix": "for",
+    "body": "for ${1:init}; ${2:condition}; ${3:update} {\n\t${4:body}\n}",
+    "description": "For loop"
+  },
+  "foreach": {
+    "prefix": "foreach",
+    "body": "foreach ${1:index} ${2:value} in ${3:collection} {\n\t${4:body}\n}",
+    "description": "Foreach loop"
+  },
+  "while": {
+    "prefix": "while",
+    "body": "while ${1:condition} {\n\t${2:body}\n}",
+    "description": "While loop"
+  },
+  "glosure": {
+    "prefix": "glosure",
+    "body": "glosure (${1:params}) {\n\t${2:body}\n}",
+    "description": "Anonymous function"
+  },
+  "lambda": {
+    "prefix": "lambda",
+    "body": "lambda (${1:params}) {\n\t${2:body}\n}",
+    "description": "Lambda function"
+  },
+  "print": {
+    "prefix": "print",
+    "body": "print(${1:value});",
+    "description": "Print statement"
+  },
+  "return": {
+    "prefix": "return",
+    "body": "return ${1:value};",
+    "description": "Return statement"
+  }
+}

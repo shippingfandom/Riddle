@@ -1,0 +1,10 @@
+(def sequence (array 1 2 3 4))
+;; for loop
+(for (def i 0) (< i ((at sequence 'len') sequence)) (def i (+ i 1)) (begin
+    (print i)))
+;; foreach loop
+(foreach idx vl sequence (begin
+    (print (array idx vl))))
+;; while loop
+(while ((at sequence 'len') sequence) (begin
+    (print ((at sequence 'pop')))))

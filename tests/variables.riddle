@@ -1,0 +1,24 @@
+// null
+a = null;
+// number
+b = 1;
+// string
+c = "test";
+// list
+d = [a, b, c];
+// list index assignment
+d[0] = a;
+d[b] = b;
+// list index
+d[0];
+d[b];
+// map
+e = {"null": a, "number": b, "string": c, "list": d};
+// map index
+e.number;
+// map index assignment
+e.map = e;
+// empty list
+empty = [];
+// empty map
+empty = {};

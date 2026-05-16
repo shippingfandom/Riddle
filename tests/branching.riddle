@@ -1,0 +1,39 @@
+// One branch
+if true {
+    print(true);
+}
+
+// Two branches
+if true {
+    print(true);
+} else {
+    print(false);
+}
+
+// Multiple branches
+if true {
+    print(true);
+} else if false {
+    print(false);
+} else if true {
+    print(true);
+} else {
+    print(false);
+}
+
+// Logical operators
+if !a {
+
+}
+else if a && b {
+
+} else if a || b {
+
+} else if a == b || a != b || a > b || a < b || a >= b || a <= b {
+
+}
+
+// Complex logical operators
+if a && b || a == b {
+
+}

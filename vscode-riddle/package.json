@@ -1,0 +1,26 @@
+{
+  "name": "riddle",
+  "displayName": "Riddle Language Support",
+  "description": "Syntax highlighting for Riddle programming language",
+  "version": "1.0.0",
+  "publisher": "riddle-lang",
+  "engines": { "vscode": "^1.60.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [{
+      "id": "riddle",
+      "aliases": ["Riddle"],
+      "extensions": [".riddle"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "riddle",
+      "scopeName": "source.riddle",
+      "path": "./syntaxes/riddle.tmLanguage.json"
+    }],
+    "snippets": [{
+      "language": "riddle",
+      "path": "./snippets/riddle.json"
+    }]
+  }
+}
