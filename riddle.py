@@ -104,7 +104,7 @@ NUMBER: /[0-9]+/
 STRING: /"[^"]*"/
 BOOL: "true" | "false"
 NULL: "null"
-NAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+NAME: /[a-zA-Z_][a-zA-Z0-9_!?]*(?:-[a-zA-Z_!?][a-zA-Z0-9_!?\-]*)*/
 COMMENT: /\/\/[^\n]*/
 
 %ignore /\s+/
