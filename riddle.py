@@ -435,17 +435,27 @@ class RiddleToGlosure:
         return self._visit(tree)
 
 
+ATTRIBUTION = """\
+;; Hiiiii~ \\(^.^ )
+;; This program is written in the Riddle programming language (0.0 )
+;; Learn more at https://github.com/shippingfandom/Riddle!
+"""
+
+
 def main():
     import sys
-    if len(sys.argv) < 2:
-        print("Usage: python riddle2gls.py <input.riddle> [output.gls]", file=sys.stderr)
+    argv = [a for a in sys.argv[1:] if a != "--no-attribution"]
+    show_attribution = "--no-attribution" not in sys.argv[1:]
+
+    if not argv:
+        print("Usage: python riddle.py [--no-attribution] <input.riddle> [output.gls]", file=sys.stderr)
         sys.exit(1)
 
     try:
-        with open(sys.argv[1], "r", encoding="utf-8") as f:
+        with open(argv[0], "r", encoding="utf-8") as f:
             source = f.read()
     except FileNotFoundError:
-        print(f"File not found: {sys.argv[1]}", file=sys.stderr)
+        print(f"File not found: {argv[0]}", file=sys.stderr)
         sys.exit(1)
 
     if not source.strip():
@@ -459,10 +469,13 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    if len(sys.argv) >= 3:
-        with open(sys.argv[2], "w", encoding="utf-8") as f:
+    if show_attribution:
+        result = ATTRIBUTION + result
+
+    if len(argv) >= 2:
+        with open(argv[1], "w", encoding="utf-8") as f:
             f.write(result)
-        print(f"Written to {sys.argv[2]}")
+        print(f"Written to {argv[1]}")
     else:
         sys.stdout.write(result)
 

@@ -10,7 +10,7 @@ for f in sorted(glob.glob(os.path.join(tests_dir, '*.riddle'))):
     name = os.path.splitext(os.path.basename(f))[0]
     result_file = os.path.join(results_dir, name + '.gls')
     correct_file = os.path.join(correct_dir, name + '.gls')
-    ret = os.system(f'.venv\\Scripts\\python riddle.py "{f}" > "{result_file}" 2>&1')
+    ret = os.system(f'.venv\\Scripts\\python riddle.py --no-attribution "{f}" > "{result_file}" 2>&1')
     if ret != 0:
         print(f'ERROR (exit {ret}): {name}')
         all_pass = False
