@@ -15,15 +15,3 @@
     (print true))
 (begin
     (print false)))))
-;; Logical operators
-(if (! a) (begin
-    )
-(if (& a b) (begin
-    )
-(if (| a b) (begin
-    )
-(if (| (| (| (| (| (== a b) (!= a b)) (> a b)) (< a b)) (>= a b)) (<= a b)) (begin
-    )))))
-;; Complex logical operators
-(if (| (& a b) (== a b)) (begin
-    ))

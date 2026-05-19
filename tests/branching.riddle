@@ -20,20 +20,3 @@ if true {
 } else {
     print(false);
 }
-
-// Logical operators
-if !a {
-
-}
-else if a && b {
-
-} else if a || b {
-
-} else if a == b || a != b || a > b || a < b || a >= b || a <= b {
-
-}
-
-// Complex logical operators
-if a && b || a == b {
-
-}

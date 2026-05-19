@@ -1,22 +1,32 @@
+import sys
+import argparse
+
 from lark import Lark, Tree, Token, UnexpectedToken, UnexpectedCharacters
+from colorama import init, Fore, Style
+
+init(autoreset=True)
 
 
 class TranspileError(Exception):
-    pass
+    def __init__(self, message, source=None, line=None, column=None):
+        super().__init__(message)
+        self.source = source
+        self.line = line
+        self.column = column
 
 GRAMMAR = r"""
 program: statement+
 
 statement: simple_stmt ";"
-         | function_def
-         | defun_def
-         | for_stmt
-         | foreach_stmt
-         | while_stmt
-         | if_stmt
-         | block
-         | COMMENT
-         | bare_stmt
+          | function_def
+          | defun_def
+          | for_stmt
+          | foreach_stmt
+          | while_stmt
+          | if_stmt
+          | block
+          | COMMENT
+          | bare_stmt ";"
 
 bare_stmt: NUMBER | STRING | BOOL | NULL | glosure_anon | lambda_anon | array_literal | dict_literal
 
@@ -25,6 +35,13 @@ simple_stmt: assignment
             | return_stmt
 
 assignment: expr "=" expr
+             | expr "+=" expr           -> add_assign
+             | expr "-=" expr           -> sub_assign
+             | expr "*=" expr           -> mul_assign
+             | expr "/=" expr           -> div_assign
+             | expr "^=" expr           -> pow_assign
+             | expr "%=" expr           -> mod_assign
+             | expr REASSIGN expr       -> reassign
 
 return_stmt: "return" expr
 
@@ -69,14 +86,18 @@ block: "{" statement* "}"
          | mul_expr "^" unary_expr    -> pow
 
 ?unary_expr: postfix_expr
-           | "!" unary_expr           -> not_
-           | "-" unary_expr           -> neg
+            | "!" unary_expr           -> not_
+            | "-" unary_expr           -> neg
+            | "++" unary_expr          -> pre_inc
+            | "--" unary_expr          -> pre_dec
 
 postfix_expr: primary
-            | postfix_expr "(" arg_list ")"
-            | postfix_expr "[" expr "]"
-            | postfix_expr "->" NAME "(" arg_list ")"
-            | postfix_expr "." NAME
+             | postfix_expr "(" arg_list ")"
+             | postfix_expr "[" expr "]"
+             | postfix_expr "->" NAME "(" arg_list ")"
+             | postfix_expr "." NAME
+             | postfix_expr "++"       -> post_inc
+             | postfix_expr "--"       -> post_dec
 
 primary: NUMBER
        | STRING
@@ -95,8 +116,10 @@ lambda_anon: "lambda" "(" param_list ")" block
 array_literal: "[" _arg_list? "]"
 dict_literal: "{" _dict_entries? "}"
 
-_dict_entries: STRING ":" expr ("," STRING ":" expr)*
+_dict_entries: expr ":" expr ("," expr ":" expr)*
 
+# _arg_list is a duplicate of arg_list because Lark cannot inline
+# optional [...] rules when used inside another [...] in array_literal
 arg_list: [expr ("," expr)*]
 _arg_list: [expr ("," expr)*]
 
@@ -108,6 +131,7 @@ STRING: /"(?:[^"\\]|\\.)*"/
 BOOL: "true" | "false"
 NULL: "null"
 NAME: /[a-zA-Z_][a-zA-Z0-9_!?]*(?:-[a-zA-Z_!?][a-zA-Z0-9_!?\-]*)*/
+REASSIGN: /<-/
 COMMENT: /\/\/[^\n]*/
 
 %ignore /\s+/
@@ -115,18 +139,50 @@ COMMENT: /\/\/[^\n]*/
 
 INDENT = "    "
 
+_BINARY_OPS = {
+    "add_assign": "(+= {} {})", "sub_assign": "(-= {} {})",
+    "mul_assign": "(*= {} {})", "div_assign": "(/= {} {})",
+    "pow_assign": "(^= {} {})", "mod_assign": "(%= {} {})",
+    "lt": "(< {} {})", "gt": "(> {} {})",
+    "le": "(<= {} {})", "ge": "(>= {} {})",
+    "eq": "(== {} {})", "ne": "(!= {} {})",
+    "add": "(+ {} {})", "sub": "(- {} {})",
+    "mul": "(* {} {})", "div": "(/ {} {})",
+    "mod": "(% {} {})", "pow": "(^ {} {})",
+    "isa": "(isa {} {})",
+}
+_UNARY_PREFIX_OPS = {
+    "not_": "(! {})",
+    "pre_inc": "(++ {})", "pre_dec": "(-- {})",
+}
+_UNARY_POSTFIX_OPS = {
+    "post_inc": "(var++ {})", "post_dec": "(var-- {})",
+}
+
 
 class RiddleToGlosure:
+    _parser = None
+
     def __init__(self):
-        self.parser = Lark(GRAMMAR, parser="earley", lexer="basic", start="program")
+        if RiddleToGlosure._parser is None:
+            RiddleToGlosure._parser = Lark(GRAMMAR, parser="earley", lexer="basic", start="program")
+        self.parser = RiddleToGlosure._parser
 
     def _visit(self, node):
         if isinstance(node, Token):
             return self._visit_token(node)
-        method = getattr(self, f"_visit_{node.data}", None)
+        data = node.data
+        if data in _BINARY_OPS:
+            return _BINARY_OPS[data].format(
+                self._visit(node.children[0]), self._visit(node.children[1]))
+        if data in _UNARY_PREFIX_OPS or data in _UNARY_POSTFIX_OPS:
+            table = _UNARY_PREFIX_OPS if data in _UNARY_PREFIX_OPS else _UNARY_POSTFIX_OPS
+            return table[data].format(
+                self._visit(node.children[0]))
+        method = getattr(self, f"_visit_{data}", None)
         if method:
             return method(node)
-        raise TranspileError(f"Unknown construct: {node.data}")
+        raise TranspileError(f"Unknown construct: {data}")
 
     def _visit_token(self, token):
         if token.type == "NUMBER":
@@ -204,13 +260,26 @@ class RiddleToGlosure:
         left_str = self._visit(left)
         return f"(def {left_str} {right_str})"
 
+    def _visit_neg(self, node):
+        child = node.children[0]
+        inner = child
+        while isinstance(inner, Tree) and len(inner.children) == 1:
+            inner = inner.children[0]
+        if isinstance(inner, Token) and inner.type == "NUMBER":
+            return "-" + inner.value
+        return f"(- {self._visit(child)})"
+
+    def _visit_reassign(self, node):
+        # children: [left, REASSIGN_token, right] — named terminal at index 1
+        return f"(= {self._visit(node.children[0])} {self._visit(node.children[2])})"
+
     def _visit_glosure_anon(self, node):
         params_str, body_str = self._make_function_body(node.children[0], node.children[1])
-        return f"(glosure ({params_str}) (begin\n{body_str}))"
+        return f"(glosure ({params_str}) (begin\n{body_str}))" if body_str else f"(glosure ({params_str}) (begin))"
 
     def _visit_lambda_anon(self, node):
         params_str, body_str = self._make_function_body(node.children[0], node.children[1])
-        return f"(lambda ({params_str}) (begin\n{body_str}))"
+        return f"(lambda ({params_str}) (begin\n{body_str}))" if body_str else f"(lambda ({params_str}) (begin))"
 
     def _visit_return_stmt(self, node):
         return self._visit(node.children[0])
@@ -385,79 +454,56 @@ class RiddleToGlosure:
             return "(dict)"
         parts = []
         for i in range(0, len(children), 2):
-            key = "'" + children[i].value[1:-1] + "'"
-            val = self._visit(children[i + 1])
-            parts.append(f"{key} {val}")
+            parts.append(f"{self._visit(children[i])} {self._visit(children[i + 1])}")
         return f"(dict {' '.join(parts)})"
 
     def _visit_arg_list(self, node):
         args = [self._visit(c) for c in node.children if c is not None]
         return " ".join(args)
 
+    def _collect_chain(self, node, data_name):
+        operands = []
+        def collect(n):
+            if isinstance(n, Tree) and n.data == data_name:
+                collect(n.children[0])
+                operands.append(self._visit(n.children[1]))
+            else:
+                operands.append(self._visit(n))
+        collect(node)
+        return operands
+
     def _visit_or_(self, node):
-        return f"(| {self._visit(node.children[0])} {self._visit(node.children[1])})"
+        operands = self._collect_chain(node, "or_")
+        result = "false"
+        for op in reversed(operands):
+            result = f"(if {op} true {result})"
+        return result
 
     def _visit_and_(self, node):
-        return f"(& {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_lt(self, node):
-        return f"(< {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_gt(self, node):
-        return f"(> {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_le(self, node):
-        return f"(<= {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_ge(self, node):
-        return f"(>= {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_eq(self, node):
-        return f"(== {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_ne(self, node):
-        return f"(!= {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_add(self, node):
-        return f"(+ {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_sub(self, node):
-        return f"(- {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_mul(self, node):
-        return f"(* {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_div(self, node):
-        return f"(/ {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_mod(self, node):
-        return f"(% {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_pow(self, node):
-        return f"(^ {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_isa(self, node):
-        return f"(isa {self._visit(node.children[0])} {self._visit(node.children[1])})"
-
-    def _visit_not_(self, node):
-        return f"(! {self._visit(node.children[0])})"
-
-    def _visit_neg(self, node):
-        return f"(- {self._visit(node.children[0])})"
+        operands = self._collect_chain(node, "and_")
+        result = "true"
+        for op in reversed(operands):
+            result = f"(if {op} {result} false)"
+        return result
 
     def transform(self, source):
         try:
             tree = self.parser.parse(source)
         except UnexpectedToken as e:
             raise TranspileError(
-                f"Unexpected token '{e.token}' at line {e.line}, column {e.column}"
+                f"Unexpected token '{e.token}'",
+                source=source, line=e.line, column=e.column
             ) from e
         except UnexpectedCharacters as e:
             raise TranspileError(
-                f"Unexpected character at line {e.line}, column {e.column}"
+                f"Unexpected character",
+                source=source, line=e.line, column=e.column
             ) from e
         except Exception as e:
-            raise TranspileError(f"Syntax error: {e}") from e
+            raise TranspileError(
+                f"Syntax error: {e}",
+                source=source
+            ) from e
         return self._visit(tree)
 
 
@@ -469,39 +515,48 @@ ATTRIBUTION = """\
 
 
 def main():
-    import sys
-    argv = [a for a in sys.argv[1:] if a != "--no-attribution"]
-    show_attribution = "--no-attribution" not in sys.argv[1:]
-
-    if not argv:
-        print("Usage: python riddle.py [--no-attribution] <input.riddle> [output.gls]", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Transpile Riddle source code to Glosure.",
+        epilog="Learn more at https://github.com/shippingfandom/Riddle!",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("input", metavar="<input.riddle>", help="path to the input Riddle source file")
+    parser.add_argument("output", metavar="[output.gls]", nargs="?", default=None, help="optional path to write the transpiled output")
+    parser.add_argument("--no-attribution", action="store_true", help="omit the attribution header from the output")
+    args = parser.parse_args()
 
     try:
-        with open(argv[0], "r", encoding="utf-8") as f:
+        with open(args.input, "r", encoding="utf-8") as f:
             source = f.read()
     except FileNotFoundError:
-        print(f"File not found: {argv[0]}", file=sys.stderr)
+        print(f"  {Fore.RED}X{Fore.RESET} file not found: {Fore.YELLOW}{args.input}{Fore.RESET}", file=sys.stderr)
         sys.exit(1)
 
     if not source.strip():
-        print("Error: empty input", file=sys.stderr)
+        print(f"  {Fore.RED}X{Fore.RESET} empty input", file=sys.stderr)
         sys.exit(1)
 
     transpiler = RiddleToGlosure()
     try:
         result = transpiler.transform(source)
     except TranspileError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print(f"  {Fore.RED}X{Fore.RESET} {Fore.YELLOW}{e}{Fore.RESET}", file=sys.stderr)
+        if e.line is not None and e.source:
+            lines = e.source.splitlines()
+            if 1 <= e.line <= len(lines):
+                print(file=sys.stderr)
+                print(f"    {Fore.CYAN}{e.line:>4}{Fore.RESET} | {lines[e.line - 1]}", file=sys.stderr)
+                if e.column is not None:
+                    print(f"    {Fore.CYAN}{'':>4}{Fore.RESET} | {' ' * (e.column - 1)}{Fore.RED}^{Fore.RESET}", file=sys.stderr)
         sys.exit(1)
 
-    if show_attribution:
+    if not args.no_attribution:
         result = ATTRIBUTION + result
 
-    if len(argv) >= 2:
-        with open(argv[1], "w", encoding="utf-8") as f:
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as f:
             f.write(result)
-        print(f"Written to {argv[1]}")
+        print(f"  {Fore.GREEN}Written to{Fore.RESET} {args.output}")
     else:
         sys.stdout.write(result)
 
