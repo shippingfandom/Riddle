@@ -1,0 +1,59 @@
+for i = 0; i < 10; i = i + 1 {
+    print(i);
+    if i > 5 {
+        print("big");
+    }
+}
+
+while true {
+    print("loop");
+    if false {
+        print("nope");
+    } else {
+        print("yep");
+    }
+}
+
+if true {
+    print("if only");
+}
+
+if true {
+    print("if else");
+} else {
+    print("else");
+}
+
+if false {
+    print("a");
+} else if true {
+    print("b");
+} else {
+    print("c");
+}
+
+foreach idx val in items {
+    print(idx);
+    print(val);
+    for x = 0; x < 5; ++x {
+        print(x);
+    }
+}
+
+defun outer(a) {
+    function inner(b) {
+        print(b);
+    }
+    lambda (c) {
+        print(c);
+    };
+    glosure (d) {
+        print(d);
+    };
+}
+
+if true {
+    if false {
+        print("deep");
+    }
+}

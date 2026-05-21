@@ -1,0 +1,11 @@
+(for (def i 0) condition (def i (+ i 1)) (begin
+    (foreach index value collection (begin
+        (if condition (begin
+            (if condition (begin
+                body)
+            (begin
+                (defun name (params) (begin
+                    (defunction name (params) (begin
+                        (lambda (params) (begin
+                            (glosure (params) (begin
+                                body))))))))))))))))

@@ -1,0 +1,70 @@
+;; Host function with zero arguments
+(defunction HostFZero () (begin
+    (print 'Host function with zero arguments')))
+;; Glosure function with zero arguments
+(defun GlosureFZero () (begin
+    (print 'Glosure function with zero arguments')))
+;; Host function reference
+(print (array 'HostFZero reference' HostFZero))
+;; Glosure function referenece
+(print (array 'GlosureFZero reference' GlosureFZero))
+;; Host function call
+(HostFZero)
+;; Glosure function call
+(GlosureFZero)
+;; Host function with one argument
+(defunction HostFOne (a) (begin
+    (print (array 'Host function with one argument' a))))
+;; Glosure function with one argument
+(defun GlosureFOne (a) (begin
+    (print (array 'Glosure function with one argument' a))))
+;; Host function call
+(HostFOne 1337)
+;; Glosure function call
+(GlosureFOne 1337)
+;; Host function with one default argument
+(defunction HostFOneDefault (a) (begin
+    (defaultvalue a 0)
+    (print (array 'Host function with one default argument' a))))
+;; Glosure function with one default argument
+(defun GlosureFOneDefault (a) (begin
+    (defaultvalue a 0)
+    (print (array 'Glosure function with one default argument' a))))
+;; Host function call
+(HostFOneDefault)
+;; Glosure function call
+(GlosureFOneDefault)
+;; Host function call
+(HostFOneDefault 1337)
+;; Glosure function call
+(GlosureFOneDefault 1337)
+;; Namespace
+(def namespace (dict))
+(set namespace 'variables' (dict))
+(set namespace 'functions' (dict))
+;; Complex arrow call
+(set (at namespace 'variables') 'root' ((at ((at (get_shell) 'host_computer') (get_shell)) 'File') ((at (get_shell) 'host_computer') (get_shell)) '/'))
+;; Complex builtin reference
+(set (at namespace 'variables') 'shell' (get_shell))
+(print (array 'shell.host_computer reference' (at (at (at namespace 'variables') 'shell') 'host_computer')))
+;; Namespace builtin function
+(defunction __Host (a b) (begin
+    (defaultvalue b 1)
+    (+ a b)))
+(set (at namespace 'functions') 'Host' __Host)
+;; Namespace Glosure function
+(defunction __Glosure (a b) (begin
+    (defaultvalue b 1)
+    (+ a b)))
+(set (at namespace 'functions') 'Glosure' __Glosure)
+;; Namespace builtin function call
+((at (at namespace 'functions') 'Host') 1 2)
+;; Namespace Glosure function call
+((at (at namespace 'functions') 'Glosure') 1 2)
+;; Very complex namespace Glosure function
+(set (at namespace 'functions') 'another' (dict))
+(defun __Glosure () (begin
+))
+(set (at (at namespace 'functions') 'another') 'Glosure' __Glosure)
+;; Very complex namespace Glosure function call
+((at (at (at namespace 'functions') 'another') 'Glosure'))

@@ -1,0 +1,8 @@
+a = 0;
+a <- 1;
+for x = 0; x < 10; x <- x + 1 {
+    print(x);
+}
+for x = 0; x < 10; ++x {
+    print(x);
+}
