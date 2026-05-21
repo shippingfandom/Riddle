@@ -1,6 +1,0 @@
-gl-break-silence("Hiiii!");
-if empty? {
-
-}
-effectful!("Effects!");
-!condition?;
