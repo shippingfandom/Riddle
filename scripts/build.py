@@ -3,9 +3,10 @@ import sys
 import os
 import shutil
 
-ICON = os.path.join('icons', 'rose_flower_garden_plant_nature_icon_209857.ico')
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+ICON = os.path.join(ROOT, 'icons', 'rose_flower_garden_plant_nature_icon_209857.ico')
 NAME = 'riddle'
-ROOT = os.path.dirname(os.path.abspath(__file__))
 
 for p in ['build', f'{NAME}.spec', 'dist']:
     p = os.path.join(ROOT, p)
@@ -27,8 +28,10 @@ cmd = [
     '--specpath', ROOT,
     '--clean', '--noconfirm',
     f'--icon={ICON}',
-    'riddle.py',
+    os.path.join(ROOT, 'riddle.py'),
 ]
+
+os.chdir(ROOT)
 
 print(f'Building {NAME}.exe ...')
 ret = subprocess.run(cmd)

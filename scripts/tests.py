@@ -9,7 +9,9 @@ from colorama import init, Fore, Style as S
 
 init(autoreset=True)
 
-tests_dir = 'tests'
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+tests_dir = os.path.join(ROOT, 'tests')
 results_dir = os.path.join(tests_dir, 'results')
 correct_dir = os.path.join(tests_dir, 'correct')
 
@@ -46,8 +48,8 @@ def run_test(f):
     my_env['PYTHONIOENCODING'] = 'utf-8'
     with open(result_file, 'w', encoding='utf-8') as out:
         ret = subprocess.run(
-            ['.venv\\Scripts\\python', 'riddle.py', '--no-attribution', f],
-            stdout=out, stderr=subprocess.PIPE, env=my_env
+            [sys.executable or '.venv\\Scripts\\python', os.path.join(ROOT, 'riddle.py'), '--no-attribution', f],
+            stdout=out, stderr=subprocess.PIPE, env=my_env, cwd=ROOT
         )
     if ret.returncode != 0:
         msg = ret.stderr.decode('utf-8') if ret.stderr else ''

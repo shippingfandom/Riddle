@@ -1,0 +1,37 @@
+(for (def i 0) (< i 10) (def i (+ i 1)) (begin
+    (print i)
+    (if (> i 5) (begin
+        (print 'big')))))
+(while true (begin
+    (print 'loop')
+    (if false (begin
+        (print 'nope'))
+    (begin
+        (print 'yep')))))
+(if true (begin
+    (print 'if only')))
+(if true (begin
+    (print 'if else'))
+(begin
+    (print 'else')))
+(if false (begin
+    (print 'a'))
+(if true (begin
+    (print 'b'))
+(begin
+    (print 'c'))))
+(foreach idx val items (begin
+    (print idx)
+    (print val)
+    (for (def x 0) (< x 5) (++ x) (begin
+        (print x)))))
+(defun outer (a) (begin
+    (defunction inner (b) (begin
+        (print b)))
+    (lambda (c) (begin
+        (print c)))
+    (glosure (d) (begin
+        (print d)))))
+(if true (begin
+    (if false (begin
+        (print 'deep')))))

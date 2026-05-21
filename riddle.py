@@ -50,7 +50,7 @@ defun_def: "defun" dotted_name "(" param_list ")" block
 
 dotted_name: NAME ("." NAME)*
 
-for_stmt: "for" assignment ";" expr ";" assignment block
+for_stmt: "for" assignment ";" expr ";" (assignment | expr) block
 foreach_stmt: "foreach" NAME NAME "in" expr block
 while_stmt: "while" expr block
 
@@ -167,6 +167,7 @@ class RiddleToGlosure:
         if RiddleToGlosure._parser is None:
             RiddleToGlosure._parser = Lark(GRAMMAR, parser="earley", lexer="basic", start="program")
         self.parser = RiddleToGlosure._parser
+        self._indent = 0
 
     def _visit(self, node):
         if isinstance(node, Token):
@@ -274,11 +275,15 @@ class RiddleToGlosure:
         return f"(= {self._visit(node.children[0])} {self._visit(node.children[2])})"
 
     def _visit_glosure_anon(self, node):
+        self._indent += 1
         params_str, body_str = self._make_function_body(node.children[0], node.children[1])
+        self._indent -= 1
         return f"(glosure ({params_str}) (begin\n{body_str}))" if body_str else f"(glosure ({params_str}) (begin))"
 
     def _visit_lambda_anon(self, node):
+        self._indent += 1
         params_str, body_str = self._make_function_body(node.children[0], node.children[1])
+        self._indent -= 1
         return f"(lambda ({params_str}) (begin\n{body_str}))" if body_str else f"(lambda ({params_str}) (begin))"
 
     def _visit_return_stmt(self, node):
@@ -296,12 +301,12 @@ class RiddleToGlosure:
             p_name = child.children[0].value
             param_names.append(p_name)
             if len(child.children) > 1:
-                defaults.append(INDENT + f"(defaultvalue {p_name} {self._visit(child.children[1])})")
+                defaults.append(INDENT * self._indent + f"(defaultvalue {p_name} {self._visit(child.children[1])})")
         params_str = " ".join(param_names)
         body = self._visit(block_node)
         body_lines = defaults[:]
         if body:
-            body_lines.append(INDENT + body)
+            body_lines.append(INDENT * self._indent + body)
         body_str = "\n".join(body_lines)
         return params_str, body_str
 
@@ -325,7 +330,9 @@ class RiddleToGlosure:
         name = self._visit(node.children[0])
         param_node = node.children[1]
         block_node = node.children[2]
+        self._indent += 1
         params_str, body_str = self._make_function_body(param_node, block_node)
+        self._indent -= 1
         if "." in name:
             return self._make_method("defunction", name, params_str, body_str)
         return f"(defunction {name} ({params_str}) (begin\n{body_str}))"
@@ -334,7 +341,9 @@ class RiddleToGlosure:
         name = self._visit(node.children[0])
         param_node = node.children[1]
         block_node = node.children[2]
+        self._indent += 1
         params_str, body_str = self._make_function_body(param_node, block_node)
+        self._indent -= 1
         if "." in name:
             return self._make_method("defun", name, params_str, body_str)
         return f"(defun {name} ({params_str}) (begin\n{body_str}))"
@@ -348,54 +357,74 @@ class RiddleToGlosure:
             r = self._visit(child)
             if r:
                 statements.append(r)
-        return ("\n" + INDENT).join(statements)
+        idt = INDENT * self._indent
+        return ("\n" + idt).join(statements)
 
     def _visit_for_stmt(self, node):
         init, cond, inc, body = node.children
         init_str = self._visit(init)
         cond_str = self._visit(cond)
         inc_str = self._visit(inc)
+        self._indent += 1
         body_str = self._visit(body)
-        return f"(for {init_str} {cond_str} {inc_str} (begin\n{INDENT}{body_str}))"
+        result = f"(for {init_str} {cond_str} {inc_str} (begin\n{INDENT * self._indent}{body_str}))"
+        self._indent -= 1
+        return result
 
     def _visit_foreach_stmt(self, node):
         idx = node.children[0].value
         vl = node.children[1].value
         expr_str = self._visit(node.children[2])
+        self._indent += 1
         body_str = self._visit(node.children[3])
-        return f"(foreach {idx} {vl} {expr_str} (begin\n{INDENT}{body_str}))"
+        result = f"(foreach {idx} {vl} {expr_str} (begin\n{INDENT * self._indent}{body_str}))"
+        self._indent -= 1
+        return result
 
     def _visit_while_stmt(self, node):
         cond = self._visit(node.children[0])
+        self._indent += 1
         body = self._visit(node.children[1])
-        return f"(while {cond} (begin\n{INDENT}{body}))"
+        result = f"(while {cond} (begin\n{INDENT * self._indent}{body}))"
+        self._indent -= 1
+        return result
 
     def _visit_if_stmt(self, node):
         children = node.children
         cond = self._visit(children[0])
+        self._indent += 1
         then_block = self._visit(children[1])
+        then_result = f"(if {cond} (begin\n{INDENT * self._indent}{then_block})"
+        self._indent -= 1
 
         if len(children) == 2:
-            return f"(if {cond} (begin\n{INDENT}{then_block}))"
+            return then_result + ")"
 
         remaining = children[2:]
         if len(remaining) % 2 == 1:
+            self._indent += 1
             last_block = self._visit(remaining[-1])
-            result = f"(begin\n{INDENT}{last_block})"
+            rest = f"(begin\n{INDENT * self._indent}{last_block})"
+            self._indent -= 1
             pairs = remaining[:-1]
         else:
-            result = ""
+            rest = ""
             pairs = remaining
 
         for i in range(len(pairs) - 2, -1, -2):
             else_cond = self._visit(pairs[i])
+            self._indent += 1
             else_block = self._visit(pairs[i + 1])
-            if result:
-                result = f"(if {else_cond} (begin\n{INDENT}{else_block})\n{result})"
+            else_part = f"(if {else_cond} (begin\n{INDENT * self._indent}{else_block})"
+            self._indent -= 1
+            if rest:
+                rest = f"{else_part}\n{INDENT * self._indent}{rest})"
             else:
-                result = f"(if {else_cond} (begin\n{INDENT}{else_block}))"
+                rest = f"{else_part})"
 
-        return f"(if {cond} (begin\n{INDENT}{then_block})\n{result})"
+        if rest:
+            return f"{then_result}\n{INDENT * self._indent}{rest})"
+        return then_result + ")"
 
     def _visit_postfix_expr(self, node):
         children = node.children
@@ -514,16 +543,98 @@ ATTRIBUTION = """\
 """
 
 
+def repl():
+    transpiler = RiddleToGlosure()
+    accumulator = ""
+
+    print(f"  {Fore.GREEN}Riddle REPL{Fore.RESET} — type Riddle code, get Glosure output!")
+    print(f"  {Fore.GREEN}//exit{Fore.RESET}, {Fore.GREEN}//quit{Fore.RESET}, {Fore.GREEN}//close{Fore.RESET}, or Ctrl-Z/EOF to quit")
+    print()
+
+    LAMBDA_PROMPT = "... "
+    PROMPT = ">>> "
+
+    def is_complete(code):
+        if not code.strip():
+            return False
+        in_string = False
+        escape = False
+        depth = 0
+        for ch in code:
+            if escape:
+                escape = False
+                continue
+            if ch == "\\":
+                escape = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+        if in_string or depth != 0:
+            return False
+        stripped = code.rstrip()
+        return stripped.endswith(";") or stripped.endswith("}")
+
+    while True:
+        try:
+            prompt = LAMBDA_PROMPT if accumulator else PROMPT
+            line = input(prompt)
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+
+        accumulator += line + "\n"
+
+        if line.strip() in ("//quit", "//exit", "//close"):
+            break
+
+        if not is_complete(accumulator):
+            continue
+
+        code = accumulator.strip()
+        accumulator = ""
+
+        if code in ("exit", "exit()", "quit", "quit()"):
+            break
+
+        try:
+            result = transpiler.transform(code)
+            print(f"  {Fore.CYAN}{result}{Fore.RESET}")
+        except TranspileError as e:
+            print(f"  {Fore.RED}X{Fore.RESET} {Fore.YELLOW}{e}{Fore.RESET}")
+            if e.line is not None and e.source:
+                lines = e.source.splitlines()
+                if 1 <= e.line <= len(lines):
+                    print()
+                    print(f"    {Fore.CYAN}{e.line:>4}{Fore.RESET} | {lines[e.line - 1]}")
+                    if e.column is not None:
+                        print(f"    {Fore.CYAN}{'':>4}{Fore.RESET} | {' ' * (e.column - 1)}{Fore.RED}^{Fore.RESET}")
+        except Exception as e:
+            print(f"  {Fore.RED}X{Fore.RESET} {Fore.YELLOW}{e}{Fore.RESET}")
+
+    print(f"  {Fore.GREEN}Удачкиии~ .( ^.^)v{Fore.RESET}")
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Transpile Riddle source code to Glosure.",
+        description="Transpile Riddle source code to Glosure. Run without arguments to start the REPL.",
         epilog="Learn more at https://github.com/shippingfandom/Riddle!",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("input", metavar="<input.riddle>", help="path to the input Riddle source file")
+    parser.add_argument("input", metavar="<input.riddle>", nargs="?", default=None, help="path to the input Riddle source file")
     parser.add_argument("output", metavar="[output.gls]", nargs="?", default=None, help="optional path to write the transpiled output")
     parser.add_argument("--no-attribution", action="store_true", help="omit the attribution header from the output")
     args = parser.parse_args()
+
+    if args.input is None:
+        repl()
+        return
 
     try:
         with open(args.input, "r", encoding="utf-8") as f:

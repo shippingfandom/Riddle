@@ -1,0 +1,19 @@
+for i = 0; condition; i = i + 1 {
+    foreach index value in collection {
+        if condition {
+            if condition {
+                body;
+            } else {
+                defun name(params) {
+                    function name(params) {
+                        lambda (params) {
+                            glosure (params) {
+                                body;
+                            };
+                        };
+                    }
+                }
+            }
+        }
+    }
+}
