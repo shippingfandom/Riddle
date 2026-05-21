@@ -4,7 +4,7 @@ A programming language transpiled to [Glosure](https://github.com/mahocitrus/Glo
 ```Java
 // Riddle: Fibonacci series up to n
 defun Fib(n) {
-    a = 0; b = 1; temp = null;
+    a = 0; b = 1;
     while a < n {
         print(a);
         b = a + b;
