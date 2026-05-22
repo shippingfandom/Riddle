@@ -4,6 +4,7 @@
   "scopeName": "source.riddle",
   "fileTypes": ["riddle"],
   "patterns": [
+    { "include": "#include-directive" },
     { "include": "#comment" },
     { "include": "#string" },
     { "include": "#function-definition" },
@@ -17,6 +18,10 @@
     { "include": "#punctuation" }
   ],
   "repository": {
+    "include-directive": {
+      "name": "keyword.control.import.riddle",
+      "match": "#include"
+    },
     "comment": {
       "name": "comment.line.double-slash.riddle",
       "match": "//.*$"
@@ -47,7 +52,8 @@
         { "match": "\\bfalse\\b", "name": "constant.language.boolean.false.riddle" },
         { "match": "\\bnull\\b", "name": "constant.language.null.riddle" },
         { "match": "\\bglosure\\b", "name": "keyword.control.glosure.riddle" },
-        { "match": "\\blambda\\b", "name": "keyword.control.lambda.riddle" }
+        { "match": "\\blambda\\b", "name": "keyword.control.lambda.riddle" },
+{ "match": "\\bnamespace\\b", "name": "keyword.control.namespace.riddle" }
       ]
     },
     "builtin": {

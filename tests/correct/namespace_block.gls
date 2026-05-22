@@ -1,0 +1,10 @@
+(def Test (dict))
+    (set Test 't' (array 1 2 (glosure () (begin))))
+    (defunction __Func () (begin))
+    (set Test 'Func' __Func)
+    (defun __Fun (a) (begin
+        (defaultvalue a 1)
+        (print 1)
+        (print 2)
+        (Func)))
+    (set Test 'Fun' __Fun)

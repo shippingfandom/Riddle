@@ -1,5 +1,7 @@
 import sys
 import argparse
+import os
+import re
 
 from lark import Lark, Tree, Token, UnexpectedToken, UnexpectedCharacters
 from colorama import init, Fore, Style
@@ -8,11 +10,13 @@ init(autoreset=True)
 
 
 class TranspileError(Exception):
-    def __init__(self, message, source=None, line=None, column=None):
+    def __init__(self, message, source=None, line=None, column=None, expected=None, category=None):
         super().__init__(message)
         self.source = source
         self.line = line
         self.column = column
+        self.expected = expected
+        self.category = category
 
 GRAMMAR = r"""
 program: statement+
@@ -27,6 +31,7 @@ statement: simple_stmt ";"
           | block
           | COMMENT
           | bare_stmt ";"
+          | namespace_stmt
 
 bare_stmt: NUMBER | STRING | BOOL | NULL | glosure_anon | lambda_anon | array_literal | dict_literal
 
@@ -55,6 +60,8 @@ foreach_stmt: "foreach" NAME NAME "in" expr block
 while_stmt: "while" expr block
 
 if_stmt: "if" expr block ("else" "if" expr block)* ("else" block)?
+
+namespace_stmt: "namespace" NAME block
 
 block: "{" statement* "}"
 
@@ -159,6 +166,23 @@ _UNARY_POSTFIX_OPS = {
     "post_inc": "(var++ {})", "post_dec": "(var-- {})",
 }
 
+_EXPECTED_ALIASES = {
+    "__ANON_0": "=", "__ANON_1": "+=", "__ANON_2": "-=", "__ANON_3": "*=",
+    "__ANON_4": "/=", "__ANON_5": "^=", "__ANON_6": "%=", "__ANON_7": "||",
+    "__ANON_8": "&&", "__ANON_9": "{", "__ANON_10": "}", "__ANON_11": "(",
+    "__ANON_12": ")", "__ANON_13": "[", "__ANON_14": "]", "__ANON_15": ":",
+    "__ANON_16": ",", "__ANON_17": ";", "__ANON_18": ".", "__ANON_19": "-",
+    "LPAR": "(", "RPAR": ")", "LSQB": "[", "RSQB": "]",
+    "LESSTHAN": "<", "GREATERTHAN": ">",
+    "NUMBER": "<number>", "STRING": "<string>", "NAME": "<name>",
+    "BOOL": "<boolean>", "NULL": "null",
+    "REASSIGN": "<-", "COMMENT": "<comment>",
+}
+
+
+def _friendly_token(t):
+    return _EXPECTED_ALIASES.get(t, t)
+
 
 class RiddleToGlosure:
     _parser = None
@@ -168,6 +192,7 @@ class RiddleToGlosure:
             RiddleToGlosure._parser = Lark(GRAMMAR, parser="earley", lexer="basic", start="program")
         self.parser = RiddleToGlosure._parser
         self._indent = 0
+        self._ns_prefixes = []
 
     def _visit(self, node):
         if isinstance(node, Token):
@@ -256,6 +281,9 @@ class RiddleToGlosure:
                     if isinstance(ch, Token):
                         if ch.type in ("NUMBER", "STRING") or ch.value in ("true", "false", "null"):
                             raise TranspileError(f"Cannot assign to a literal: {ch.value}")
+                        if self._ns_prefixes and ch.type == "NAME":
+                            ns_full = ".".join(self._ns_prefixes)
+                            return f"(set {ns_full} '{ch.value}' {right_str})"
                     if isinstance(ch, Tree) and ch.data in ("array_literal", "dict_literal", "glosure_anon", "lambda_anon"):
                         raise TranspileError("Cannot assign to a literal")
         left_str = self._visit(left)
@@ -322,12 +350,16 @@ class RiddleToGlosure:
                 target = f"(at {target} '{part}')"
             set_target = target
         func_name = f"__{method_name}"
-        func_def = f"({keyword} {func_name} ({params_str}) (begin\n{body_str}))"
+        func_body = f"(begin\n{body_str})" if body_str else "(begin)"
+        func_def = f"({keyword} {func_name} ({params_str}) {func_body})"
         set_line = f"(set {set_target} '{method_name}' {func_name})"
-        return func_def + "\n" + set_line
+        idt = INDENT * self._indent
+        return func_def + "\n" + idt + set_line
 
     def _visit_function_def(self, node):
         name = self._visit(node.children[0])
+        if self._ns_prefixes:
+            name = ".".join(self._ns_prefixes) + "." + name
         param_node = node.children[1]
         block_node = node.children[2]
         self._indent += 1
@@ -335,10 +367,13 @@ class RiddleToGlosure:
         self._indent -= 1
         if "." in name:
             return self._make_method("defunction", name, params_str, body_str)
-        return f"(defunction {name} ({params_str}) (begin\n{body_str}))"
+        func_body = f"(begin\n{body_str})" if body_str else "(begin)"
+        return f"(defunction {name} ({params_str}) {func_body})"
 
     def _visit_defun_def(self, node):
         name = self._visit(node.children[0])
+        if self._ns_prefixes:
+            name = ".".join(self._ns_prefixes) + "." + name
         param_node = node.children[1]
         block_node = node.children[2]
         self._indent += 1
@@ -346,7 +381,8 @@ class RiddleToGlosure:
         self._indent -= 1
         if "." in name:
             return self._make_method("defun", name, params_str, body_str)
-        return f"(defun {name} ({params_str}) (begin\n{body_str}))"
+        func_body = f"(begin\n{body_str})" if body_str else "(begin)"
+        return f"(defun {name} ({params_str}) {func_body})"
 
     def _visit_param_list(self, node):
         return " ".join(child.children[0].value for child in node.children)
@@ -425,6 +461,20 @@ class RiddleToGlosure:
         if rest:
             return f"{then_result}\n{INDENT * self._indent}{rest})"
         return then_result + ")"
+
+    def _visit_namespace_stmt(self, node):
+        ns_name = node.children[0].value
+        block_node = node.children[1]
+        full_name = ".".join(self._ns_prefixes + [ns_name])
+        self._ns_prefixes.append(ns_name)
+        self._indent += 1
+        body = self._visit(block_node)
+        result = f"(def {full_name} (dict))"
+        if body:
+            result += f"\n{INDENT * self._indent}{body}"
+        self._indent -= 1
+        self._ns_prefixes.pop()
+        return result
 
     def _visit_postfix_expr(self, node):
         children = node.children
@@ -515,23 +565,69 @@ class RiddleToGlosure:
             result = f"(if {op} {result} false)"
         return result
 
-    def transform(self, source):
+    def _include_directive(self, match, source_dir, seen):
+        path = match.group(1)
+        if not os.path.isabs(path):
+            path = os.path.normpath(os.path.join(source_dir, path)) if source_dir else path
+        if not os.path.exists(path):
+            raise TranspileError(f"Included file not found: {path}")
+        real = os.path.realpath(path)
+        if real in seen:
+            raise TranspileError(f"Circular include: '{match.group(1)}' was already included")
+        seen.add(real)
+        with open(path, "r", encoding="utf-8") as f:
+            included = f.read()
+        return self._process_includes(included, os.path.dirname(path), seen)
+
+    _INCLUDE_RE = re.compile(r'#include\s+"([^"]+)"\s*;\s*')
+
+    def _process_includes(self, source, source_dir=None, seen=None):
+        if seen is None:
+            seen = set()
+        def repl(m):
+            line_start = source.rfind('\n', 0, m.start()) + 1
+            prefix = source[line_start:m.start()]
+            if '//' in prefix:
+                return m.group(0)
+            return self._include_directive(m, source_dir, seen)
+        return self._INCLUDE_RE.sub(repl, source)
+
+    def _minify_output(self, text):
+        lines = []
+        for line in text.split("\n"):
+            stripped = line.strip()
+            if stripped.startswith(";;"):
+                continue
+            if stripped:
+                lines.append(stripped)
+        return " ".join(lines)
+
+    def transform(self, source, source_path=None):
+        source_dir = os.path.dirname(os.path.abspath(source_path)) if source_path else None
+        source = self._process_includes(source, source_dir)
         try:
             tree = self.parser.parse(source)
         except UnexpectedToken as e:
+            expected = [_friendly_token(t) for t in e.expected] if hasattr(e, 'expected') else None
+            msg = f"Unexpected token '{e.token}'"
+            if expected:
+                msg += f" — expected {', '.join(expected[:6])}"
+                if len(expected) > 6:
+                    msg += f", … ({len(expected) - 6} more)"
             raise TranspileError(
-                f"Unexpected token '{e.token}'",
-                source=source, line=e.line, column=e.column
+                msg, source=source, line=e.line, column=e.column,
+                expected=expected, category="Parse Error"
             ) from e
         except UnexpectedCharacters as e:
+            msg = f"Unexpected character '{e.char}' at line {e.line}, column {e.column}" if hasattr(e, 'char') else "Unexpected character"
             raise TranspileError(
-                f"Unexpected character",
-                source=source, line=e.line, column=e.column
+                msg, source=source, line=e.line, column=e.column,
+                category="Parse Error"
             ) from e
         except Exception as e:
             raise TranspileError(
                 f"Syntax error: {e}",
-                source=source
+                source=source, category="Syntax Error"
             ) from e
         return self._visit(tree)
 
@@ -541,6 +637,37 @@ ATTRIBUTION = """\
 ;; This program is written in the Riddle programming language (0.0 )
 ;; Learn more at https://github.com/shippingfandom/Riddle!
 """
+
+
+def _print_error(e, file_path=None):
+    category = e.category or "Error"
+    label = f"  {Fore.RED}{category}{Fore.RESET}"
+    print(f"{label} {Fore.YELLOW}{e}{Fore.RESET}", file=sys.stderr)
+
+    if e.line is not None and e.source:
+        lines = e.source.splitlines()
+        if 1 <= e.line <= len(lines):
+            print(file=sys.stderr)
+            n = e.line
+            start = max(0, n - 3)
+            end = min(len(lines), n + 1)
+            for i in range(start, end):
+                ln = i + 1
+                prefix = f"{Fore.RED}>{Fore.RESET}" if ln == n else " "
+                num = f"{Fore.CYAN}{ln:>4}{Fore.RESET}"
+                print(f"  {prefix} {num} | {lines[i]}", file=sys.stderr)
+                if ln == n and e.column is not None:
+                    caret = " " * (e.column - 1) + f"{Fore.RED}^{Fore.RESET}"
+                    print(f"     {Fore.CYAN}{'':>4}{Fore.RESET} | {caret}", file=sys.stderr)
+
+    if file_path:
+        print(f"     {Fore.CYAN}file:{Fore.RESET} {file_path}", file=sys.stderr)
+
+    if e.expected:
+        show = e.expected[:6]
+        if len(e.expected) > 6:
+            show.append(f"… ({len(e.expected) - 6} more)")
+        print(f"     {Fore.CYAN}expected:{Fore.RESET} {', '.join(show)}", file=sys.stderr)
 
 
 def repl():
@@ -607,16 +734,9 @@ def repl():
             result = transpiler.transform(code)
             print(f"  {Fore.CYAN}{result}{Fore.RESET}")
         except TranspileError as e:
-            print(f"  {Fore.RED}X{Fore.RESET} {Fore.YELLOW}{e}{Fore.RESET}")
-            if e.line is not None and e.source:
-                lines = e.source.splitlines()
-                if 1 <= e.line <= len(lines):
-                    print()
-                    print(f"    {Fore.CYAN}{e.line:>4}{Fore.RESET} | {lines[e.line - 1]}")
-                    if e.column is not None:
-                        print(f"    {Fore.CYAN}{'':>4}{Fore.RESET} | {' ' * (e.column - 1)}{Fore.RED}^{Fore.RESET}")
+            _print_error(e)
         except Exception as e:
-            print(f"  {Fore.RED}X{Fore.RESET} {Fore.YELLOW}{e}{Fore.RESET}")
+            print(f"  {Fore.RED}Error{Fore.RESET} {Fore.YELLOW}{e}{Fore.RESET}")
 
     print(f"  {Fore.GREEN}Удачкиии~ .( ^.^)v{Fore.RESET}")
 
@@ -630,6 +750,7 @@ def main():
     parser.add_argument("input", metavar="<input.riddle>", nargs="?", default=None, help="path to the input Riddle source file")
     parser.add_argument("output", metavar="[output.gls]", nargs="?", default=None, help="optional path to write the transpiled output")
     parser.add_argument("--no-attribution", action="store_true", help="omit the attribution header from the output")
+    parser.add_argument("--minify", action="store_true", help="produce minified output without indentation or comments")
     args = parser.parse_args()
 
     if args.input is None:
@@ -649,20 +770,16 @@ def main():
 
     transpiler = RiddleToGlosure()
     try:
-        result = transpiler.transform(source)
+        result = transpiler.transform(source, source_path=args.input)
     except TranspileError as e:
-        print(f"  {Fore.RED}X{Fore.RESET} {Fore.YELLOW}{e}{Fore.RESET}", file=sys.stderr)
-        if e.line is not None and e.source:
-            lines = e.source.splitlines()
-            if 1 <= e.line <= len(lines):
-                print(file=sys.stderr)
-                print(f"    {Fore.CYAN}{e.line:>4}{Fore.RESET} | {lines[e.line - 1]}", file=sys.stderr)
-                if e.column is not None:
-                    print(f"    {Fore.CYAN}{'':>4}{Fore.RESET} | {' ' * (e.column - 1)}{Fore.RED}^{Fore.RESET}", file=sys.stderr)
+        _print_error(e, file_path=args.input)
         sys.exit(1)
 
     if not args.no_attribution:
         result = ATTRIBUTION + result
+
+    if args.minify:
+        result = transpiler._minify_output(result)
 
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:

@@ -1,8 +1,33 @@
 # Welcome to Riddle!
 Riddle is a programming language that transpiles to Glosure.
 
+## CLI Usage
+
+```
+python riddle.py [options] <input.riddle> [output.gls]
+```
+
+Run without arguments to start the **REPL** — an interactive prompt where you can type Riddle code and see the transpiled output immediately.
+
+| Flag | Description |
+|:-----|:------------|
+| `--no-attribution` | Omit the attribution header |
+| `--minify` | Collapse all whitespace and remove comments for a compact one-line output |
+
+REPL exit commands: `//exit`, `//quit`, `//close`, Ctrl-Z/EOF.
+
+## File Includes
+
+Include another Riddle source file with the `#include` directive. Paths relative to the file containing the directive are resolved from that file's directory; absolute paths are also supported. Includes are processed recursively.
+
+```
+#include "lib.riddle";
+#include "C:/Projects/helpers.riddle";
+#include "../shared/utils.riddle";
+```
+
 ## Syntax
-Every statement must end with a **semicolon** — including bare literals, assignments, expressions, and `return`.
+Every statement must end with a **semicolon** — including bare literals, assignments, expressions, and `return`. `#include` directives must also end with a semicolon.
 
 Code blocks are delimited by **braces**. Indentation matters only for readability.
 
@@ -144,6 +169,45 @@ a--;     // decrement a by 1
 | Logical | `&&`, `\|\|`, `!` |
 | Type check | `isa` |
 | Arrow (method) | `->` |
+
+## Namespace Blocks
+
+A `namespace` block creates a dict and scopes its member definitions inside it:
+
+```
+namespace MyApp {
+    x = 1;
+    defun greet(name) {
+        print(name);
+    }
+    function helper() {
+        return x;
+    }
+}
+```
+
+This transpiles as:
+
+```
+MyApp = {};
+MyApp.x = 1;
+defun MyApp.greet(name) {
+    print(name);
+}
+function MyApp.helper() {
+    return x;
+}
+```
+
+Namespaces can be nested:
+
+```
+namespace Outer {
+    namespace Inner {
+        val = 42;
+    }
+}
+```
 
 ## Control Flow
 

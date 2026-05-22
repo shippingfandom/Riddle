@@ -1,0 +1,13 @@
+namespace Test {
+    t = [1, 2, glosure() {}];
+
+    function Func() {
+
+    }
+
+    defun Fun(a = 1) {
+        print(1);
+        print(2);
+        return Func();
+    }
+}

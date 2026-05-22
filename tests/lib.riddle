@@ -1,0 +1,7 @@
+defun greet(name) {
+    print(name);
+}
+
+defun add(a, b) {
+    a + b;
+}

@@ -46,36 +46,36 @@ HostFOneDefault(1337);
 GlosureFOneDefault(1337);
 
 // Namespace
-namespace = {};
-namespace.variables = {};
-namespace.functions = {};
+ns = {};
+ns.variables = {};
+ns.functions = {};
 
 // Complex arrow call
-namespace.variables.root = get_shell()->host_computer()->File("/");
+ns.variables.root = get_shell()->host_computer()->File("/");
 
 // Complex builtin reference
-namespace.variables.shell = get_shell();
-print(["shell.host_computer reference", namespace.variables.shell.host_computer]);
+ns.variables.shell = get_shell();
+print(["shell.host_computer reference", ns.variables.shell.host_computer]);
 
 // Namespace builtin function
-function namespace.functions.Host(a, b = 1) {
+function ns.functions.Host(a, b = 1) {
     return a + b;
 }
 // Namespace Glosure function
-function namespace.functions.Glosure(a, b = 1) {
+function ns.functions.Glosure(a, b = 1) {
     return a + b;
 }
 
 // Namespace builtin function call
-namespace.functions.Host(1, 2);
+ns.functions.Host(1, 2);
 // Namespace Glosure function call
-namespace.functions.Glosure(1, 2);
+ns.functions.Glosure(1, 2);
 
 
 // Very complex namespace Glosure function
-namespace.functions.another = {};
-defun namespace.functions.another.Glosure() {
+ns.functions.another = {};
+defun ns.functions.another.Glosure() {
 
 }
 // Very complex namespace Glosure function call
-namespace.functions.another.Glosure();
+ns.functions.another.Glosure();
