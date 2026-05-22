@@ -1,0 +1,4 @@
+#include "lib.riddle";
+
+greet("world");
+add(1, 2);

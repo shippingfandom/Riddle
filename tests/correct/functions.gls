@@ -39,32 +39,31 @@
 ;; Glosure function call
 (GlosureFOneDefault 1337)
 ;; Namespace
-(def namespace (dict))
-(set namespace 'variables' (dict))
-(set namespace 'functions' (dict))
+(def ns (dict))
+(set ns 'variables' (dict))
+(set ns 'functions' (dict))
 ;; Complex arrow call
-(set (at namespace 'variables') 'root' ((at ((at (get_shell) 'host_computer') (get_shell)) 'File') ((at (get_shell) 'host_computer') (get_shell)) '/'))
+(set (at ns 'variables') 'root' ((at ((at (get_shell) 'host_computer') (get_shell)) 'File') ((at (get_shell) 'host_computer') (get_shell)) '/'))
 ;; Complex builtin reference
-(set (at namespace 'variables') 'shell' (get_shell))
-(print (array 'shell.host_computer reference' (at (at (at namespace 'variables') 'shell') 'host_computer')))
+(set (at ns 'variables') 'shell' (get_shell))
+(print (array 'shell.host_computer reference' (at (at (at ns 'variables') 'shell') 'host_computer')))
 ;; Namespace builtin function
 (defunction __Host (a b) (begin
     (defaultvalue b 1)
     (+ a b)))
-(set (at namespace 'functions') 'Host' __Host)
+(set (at ns 'functions') 'Host' __Host)
 ;; Namespace Glosure function
 (defunction __Glosure (a b) (begin
     (defaultvalue b 1)
     (+ a b)))
-(set (at namespace 'functions') 'Glosure' __Glosure)
+(set (at ns 'functions') 'Glosure' __Glosure)
 ;; Namespace builtin function call
-((at (at namespace 'functions') 'Host') 1 2)
+((at (at ns 'functions') 'Host') 1 2)
 ;; Namespace Glosure function call
-((at (at namespace 'functions') 'Glosure') 1 2)
+((at (at ns 'functions') 'Glosure') 1 2)
 ;; Very complex namespace Glosure function
-(set (at namespace 'functions') 'another' (dict))
-(defun __Glosure () (begin
-))
-(set (at (at namespace 'functions') 'another') 'Glosure' __Glosure)
+(set (at ns 'functions') 'another' (dict))
+(defun __Glosure () (begin))
+(set (at (at ns 'functions') 'another') 'Glosure' __Glosure)
 ;; Very complex namespace Glosure function call
-((at (at (at namespace 'functions') 'another') 'Glosure'))
+((at (at (at ns 'functions') 'another') 'Glosure'))

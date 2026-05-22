@@ -1,0 +1,4 @@
+(defun greet (name) (begin
+    (print name)))
+(defun add (a b) (begin
+    (+ a b)))
