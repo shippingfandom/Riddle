@@ -2,7 +2,7 @@
 A programming language transpiled to [Glosure](https://github.com/mahocitrus/Glosure)!
 
 ```Java
-// Riddle: Fibonacci series up to n
+// Fibonacci series up to n
 defun Fib(n) {
     a = 0; b = 1;
     while a < n {
