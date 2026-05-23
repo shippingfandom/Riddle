@@ -43,7 +43,7 @@
 (set ns 'variables' (dict))
 (set ns 'functions' (dict))
 ;; Complex arrow call
-(set (at ns 'variables') 'root' ((at ((at (get_shell) 'host_computer') (get_shell)) 'File') ((at (get_shell) 'host_computer') (get_shell)) '/'))
+(set (at ns 'variables') 'root' ((at (def __arrow2 ((at (def __arrow1 (get_shell)) 'host_computer') __arrow1)) 'File') __arrow2 '/'))
 ;; Complex builtin reference
 (set (at ns 'variables') 'shell' (get_shell))
 (print (array 'shell.host_computer reference' (at (at (at ns 'variables') 'shell') 'host_computer')))

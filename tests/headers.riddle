@@ -1,0 +1,4 @@
+namespace Lazy {
+    namespace Helpers {}
+    namespace Menu {}
+}

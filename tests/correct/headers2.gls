@@ -1,0 +1,4 @@
+(def Lazy (dict))
+    (set Lazy 'Helpers' (dict))
+        (set (at Lazy 'Helpers') 'Test' (dict))
+    (set Lazy 'Menu' (dict))
