@@ -193,6 +193,7 @@ class RiddleToGlosure:
         self.parser = RiddleToGlosure._parser
         self._indent = 0
         self._ns_prefixes = []
+        self._arrow_counter = 0
 
     def _visit(self, node):
         if isinstance(node, Token):
@@ -466,10 +467,17 @@ class RiddleToGlosure:
         ns_name = node.children[0].value
         block_node = node.children[1]
         full_name = ".".join(self._ns_prefixes + [ns_name])
+        if self._ns_prefixes:
+            parts = list(self._ns_prefixes)
+            target = parts[0]
+            for part in parts[1:]:
+                target = f"(at {target} '{part}')"
+            result = f"(set {target} '{ns_name}' (dict))"
+        else:
+            result = f"(def {full_name} (dict))"
         self._ns_prefixes.append(ns_name)
         self._indent += 1
         body = self._visit(block_node)
-        result = f"(def {full_name} (dict))"
         if body:
             result += f"\n{INDENT * self._indent}{body}"
         self._indent -= 1
@@ -505,10 +513,13 @@ class RiddleToGlosure:
                 base = self._visit(children[0])
                 method = children[1].value
                 args = self._visit(children[2])
+                self._arrow_counter += 1
+                var = f"__arrow{self._arrow_counter}"
+                wrapped = f"(def {var} {base})"
                 if args:
-                    return f"((at {base} '{method}') {base} {args})"
+                    return f"((at {wrapped} '{method}') {var} {args})"
                 else:
-                    return f"((at {base} '{method}') {base})"
+                    return f"((at {wrapped} '{method}') {var})"
             raise TranspileError("Unexpected expression structure (n==3, middle is not NAME)")
 
         raise TranspileError(f"Unexpected expression structure (n={n})")
