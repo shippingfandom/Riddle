@@ -1,0 +1,4 @@
+namespace A.B.C.D {
+    a = 1;
+    defun C() {}
+}

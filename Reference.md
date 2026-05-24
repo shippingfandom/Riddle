@@ -13,6 +13,7 @@ Run without arguments to start the **REPL** — an interactive prompt where you 
 |:-----|:------------|
 | `--no-attribution` | Omit the attribution header |
 | `--minify` | Collapse all whitespace and remove comments for a compact one-line output |
+| `--no-time` | Omit the transpilation time output |
 
 REPL exit commands: `//exit`, `//quit`, `//close`, Ctrl-Z/EOF.
 
@@ -20,10 +21,14 @@ REPL exit commands: `//exit`, `//quit`, `//close`, Ctrl-Z/EOF.
 
 Include another Riddle source file with the `#include` directive. Paths relative to the file containing the directive are resolved from that file's directory; absolute paths are also supported. Includes are processed recursively.
 
+Wildcards (`*`, `?`, `**`) are supported — matching files are included in sorted order.
+
 ```
 #include "lib.riddle";
 #include "C:/Projects/helpers.riddle";
 #include "../shared/utils.riddle";
+#include "src/helpers/*";
+#include "plugins/**/*.riddle";
 ```
 
 ## Syntax
