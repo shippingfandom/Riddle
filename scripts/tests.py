@@ -52,7 +52,7 @@ def run_test(f, extra_flags=None):
     my_env['PYTHONIOENCODING'] = 'utf-8'
     with open(result_file, 'w', encoding='utf-8') as out:
         ret = subprocess.run(
-            [sys.executable or '.venv\\Scripts\\python', os.path.join(ROOT, 'riddle.py'), '--no-attribution'] + extra_flags + [f],
+            [sys.executable or '.venv\\Scripts\\python', os.path.join(ROOT, 'riddle.py'), '--no-attribution', '--no-time'] + extra_flags + [f],
             stdout=out, stderr=subprocess.PIPE, env=my_env, cwd=ROOT
         )
     if ret.returncode != 0:

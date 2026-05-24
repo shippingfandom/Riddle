@@ -1,0 +1,4 @@
+(set (at (at A 'B') 'C') 'D' (dict))
+    (set (at (at (at A 'B') 'C') 'D') 'a' 1)
+    (defun __C () (begin))
+    (set (at (at (at A 'B') 'C') 'D') 'C' __C)

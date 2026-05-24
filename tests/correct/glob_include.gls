@@ -1,0 +1,12 @@
+(+ a b)
+(- a b)
+(* a b)
+(/ a b)
+(^ a b)
+(% a b)
+(isa a b)
+(gl-break-silence 'Hiiii!')
+(if empty? (begin
+    ))
+(effectful! 'Effects!')
+(! condition?)

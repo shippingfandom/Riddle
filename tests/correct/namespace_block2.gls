@@ -1,0 +1,4 @@
+(set A 'B' (dict))
+    (set (at A 'B') 'a' 1)
+    (defun __C () (begin))
+    (set (at A 'B') 'C' __C)

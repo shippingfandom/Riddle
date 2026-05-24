@@ -2,9 +2,12 @@ import sys
 import argparse
 import os
 import re
+import time
+import glob
 
 from lark import Lark, Tree, Token, UnexpectedToken, UnexpectedCharacters
 from colorama import init, Fore, Style
+import pyperclip
 
 init(autoreset=True)
 
@@ -61,7 +64,7 @@ while_stmt: "while" expr block
 
 if_stmt: "if" expr block ("else" "if" expr block)* ("else" block)?
 
-namespace_stmt: "namespace" NAME block
+namespace_stmt: "namespace" dotted_name block
 
 block: "{" statement* "}"
 
@@ -195,6 +198,16 @@ class RiddleToGlosure:
         self._ns_prefixes = []
         self._arrow_counter = 0
 
+    def _ns_path(self):
+        if not self._ns_prefixes:
+            return ""
+        if len(self._ns_prefixes) == 1:
+            return self._ns_prefixes[0]
+        target = self._ns_prefixes[0]
+        for part in self._ns_prefixes[1:]:
+            target = f"(at {target} '{part}')"
+        return target
+
     def _visit(self, node):
         if isinstance(node, Token):
             return self._visit_token(node)
@@ -283,7 +296,7 @@ class RiddleToGlosure:
                         if ch.type in ("NUMBER", "STRING") or ch.value in ("true", "false", "null"):
                             raise TranspileError(f"Cannot assign to a literal: {ch.value}")
                         if self._ns_prefixes and ch.type == "NAME":
-                            ns_full = ".".join(self._ns_prefixes)
+                            ns_full = self._ns_path()
                             return f"(set {ns_full} '{ch.value}' {right_str})"
                     if isinstance(ch, Tree) and ch.data in ("array_literal", "dict_literal", "glosure_anon", "lambda_anon"):
                         raise TranspileError("Cannot assign to a literal")
@@ -464,24 +477,28 @@ class RiddleToGlosure:
         return then_result + ")"
 
     def _visit_namespace_stmt(self, node):
-        ns_name = node.children[0].value
+        ns_parts = self._visit(node.children[0]).split(".")
         block_node = node.children[1]
-        full_name = ".".join(self._ns_prefixes + [ns_name])
         if self._ns_prefixes:
-            parts = list(self._ns_prefixes)
-            target = parts[0]
-            for part in parts[1:]:
+            target = self._ns_path()
+            for part in ns_parts[:-1]:
                 target = f"(at {target} '{part}')"
-            result = f"(set {target} '{ns_name}' (dict))"
+            result = f"(set {target} '{ns_parts[-1]}' (dict))"
+        elif len(ns_parts) == 1:
+            result = f"(def {ns_parts[0]} (dict))"
         else:
-            result = f"(def {full_name} (dict))"
-        self._ns_prefixes.append(ns_name)
+            target = ns_parts[0]
+            for part in ns_parts[1:-1]:
+                target = f"(at {target} '{part}')"
+            result = f"(set {target} '{ns_parts[-1]}' (dict))"
+        self._ns_prefixes.extend(ns_parts)
         self._indent += 1
         body = self._visit(block_node)
         if body:
             result += f"\n{INDENT * self._indent}{body}"
         self._indent -= 1
-        self._ns_prefixes.pop()
+        for _ in ns_parts:
+            self._ns_prefixes.pop()
         return result
 
     def _visit_postfix_expr(self, node):
@@ -580,11 +597,23 @@ class RiddleToGlosure:
         path = match.group(1)
         if not os.path.isabs(path):
             path = os.path.normpath(os.path.join(source_dir, path)) if source_dir else path
+        if glob.has_magic(path):
+            files = sorted(glob.glob(path, recursive=True))
+            if not files:
+                raise TranspileError(f"No files match include pattern: {match.group(1)}")
+            result = ""
+            for f in files:
+                if os.path.isfile(f):
+                    result += self._include_directive_file(f, seen) + "\n"
+            return result.strip()
+        return self._include_directive_file(path, seen)
+
+    def _include_directive_file(self, path, seen):
         if not os.path.exists(path):
             raise TranspileError(f"Included file not found: {path}")
         real = os.path.realpath(path)
         if real in seen:
-            raise TranspileError(f"Circular include: '{match.group(1)}' was already included")
+            raise TranspileError(f"Circular include: '{os.path.basename(path)}' was already included")
         seen.add(real)
         with open(path, "r", encoding="utf-8") as f:
             included = f.read()
@@ -762,6 +791,7 @@ def main():
     parser.add_argument("output", metavar="[output.gls]", nargs="?", default=None, help="optional path to write the transpiled output")
     parser.add_argument("--no-attribution", action="store_true", help="omit the attribution header from the output")
     parser.add_argument("--minify", action="store_true", help="produce minified output without indentation or comments")
+    parser.add_argument("--no-time", action="store_true", help="omit the transpilation time output")
     args = parser.parse_args()
 
     if args.input is None:
@@ -780,17 +810,27 @@ def main():
         sys.exit(1)
 
     transpiler = RiddleToGlosure()
+    t0 = time.perf_counter()
     try:
         result = transpiler.transform(source, source_path=args.input)
     except TranspileError as e:
         _print_error(e, file_path=args.input)
         sys.exit(1)
+    elapsed = time.perf_counter() - t0
+
+    if not args.no_time:
+        print(f"  {Fore.GREEN}Time:{Fore.RESET} {elapsed:.3f}s", file=sys.stderr)
 
     if not args.no_attribution:
         result = ATTRIBUTION + result
 
     if args.minify:
         result = transpiler._minify_output(result)
+
+    try:
+        pyperclip.copy(result)
+    except Exception:
+        pass
 
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
