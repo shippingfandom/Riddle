@@ -26,10 +26,15 @@ jobs:
       - name: Build executable
         run: python scripts/build.py
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Rename for release
+        run: python -c "import os,shutil; platform='${{ runner.os }}'.lower(); ext='.exe' if os.name=='nt' else ''; run_id='${{ github.run_id }}'; shutil.move(f'riddle{ext}', f'riddle-{run_id}-{platform}{ext}')"
+
+      - uses: ncipollo/release-action@v1
         with:
-          name: riddle-${{ runner.os }}
-          path: |
-            riddle
-            riddle.exe
+          tag: riddle-${{ github.run_id }}
+          name: Riddle build ${{ github.run_id }}
+          commit: ${{ github.sha }}
+          artifacts: riddle-*
+          allowUpdates: true
+          replacesArtifacts: true
+          body: Automatic build from commit ${{ github.sha }}
