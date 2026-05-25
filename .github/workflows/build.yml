@@ -39,4 +39,4 @@ jobs:
           artifacts: riddle-*
           allowUpdates: true
           replacesArtifacts: true
-          body: Standalone Riddle binaries for various operating systems built by Github Actions w/ ❤️
+          body: Standalone Riddle binaries for various operating systems built for you with love by Github Actions ❤️
