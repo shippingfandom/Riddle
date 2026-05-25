@@ -34,9 +34,9 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           tag: riddle-${{ github.run_id }}
-          name: Riddle build ${{ github.run_id }}
+          name: Standalone Riddle Build ${{ github.run_id }}
           commit: ${{ github.sha }}
           artifacts: riddle-*
           allowUpdates: true
           replacesArtifacts: true
-          body: Automatic build from commit ${{ github.sha }}
+          body: Standalone Riddle binaries for various operating systems built by Github Actions Pipeline w/ ❤️

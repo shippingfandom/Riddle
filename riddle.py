@@ -793,6 +793,7 @@ def main():
     parser.add_argument("--no-attribution", action="store_true", help="omit the attribution header from the output")
     parser.add_argument("--minify", action="store_true", help="produce minified output without indentation or comments")
     parser.add_argument("--no-time", action="store_true", help="omit the transpilation time output")
+    parser.add_argument("--no-output", action="store_true", help="suppress transpiled output to stdout (only applies when no output file is specified)")
     args = parser.parse_args()
 
     if args.input is None:
@@ -837,7 +838,7 @@ def main():
         with open(args.output, "w", encoding="utf-8") as f:
             f.write(result)
         print(f"  {Fore.GREEN}Written to{Fore.RESET} {args.output}")
-    else:
+    elif not args.no_output:
         sys.stdout.write(result)
 
 
