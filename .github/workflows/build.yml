@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     permissions:
-      contents: write
+      contents: read
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -42,13 +42,35 @@ jobs:
         run: python scripts/build.py
 
       - name: Rename for release
-        run: python -c "import os,shutil; platform='${{ runner.os }}'.lower(); ext='.exe' if os.name=='nt' else ''; run_id='${{ github.run_id }}'; shutil.move(f'riddle{ext}', f'riddle-{run_id}-{platform}{ext}')"
+        shell: bash
+        run: |
+          platform=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          ext=""
+          [ "${{ runner.os }}" = "Windows" ] && ext=".exe"
+          mv "riddle${ext}" "riddle-${{ github.run_id }}-${platform}${ext}"
 
-      - uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@v4
         with:
-          tag_name: riddle-${{ github.run_id }}
-          name: Standalone Riddle Binaries ${{ github.run_id }}
-          target_commitish: ${{ github.sha }}
-          files: riddle-*
-          fail_on_unmatched_files: false
-          body: Standalone Riddle binaries for various operating systems built with love by GitHub Actions ❤️
+          name: binary-${{ runner.os }}
+          path: riddle-*
+
+  release:
+    needs: build
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          merge-multiple: true
+
+      - name: Create Release and Upload
+        run: |
+          gh release create "riddle-${{ github.run_id }}" \
+            --title "Standalone Riddle Binaries ${{ github.run_id }}" \
+            --notes "Standalone Riddle binaries for various operating systems built with love by GitHub Actions" \
+            2>/dev/null || true
+          gh release upload "riddle-${{ github.run_id }}" riddle-* --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
