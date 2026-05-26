@@ -25,16 +25,7 @@ jobs:
           pip install -r requirements.txt
           pip install PyInstaller
 
-      - name: Install UPX (Linux/macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          case "${{ runner.os }}" in
-            Linux)  sudo apt-get install -y upx ;;
-            macOS)  brew install upx ;;
-          esac
-
-      - name: Install UPX (Windows)
+      - name: Install UPX (Windows only)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
