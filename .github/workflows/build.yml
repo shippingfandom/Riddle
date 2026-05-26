@@ -25,20 +25,28 @@ jobs:
           pip install -r requirements.txt
           pip install PyInstaller
 
-      - name: Install UPX
+      - name: Install UPX (Linux/macOS)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           case "${{ runner.os }}" in
             Linux)  sudo apt-get install -y upx ;;
             macOS)  brew install upx ;;
-            Windows)
-              curl -sL https://github.com/upx/upx/releases/download/v5.0.0/upx-5.0.0-win64.zip -o upx.zip
-              unzip -q upx.zip
-              echo "$PWD/upx-5.0.0-win64" >> "$GITHUB_PATH"
-              ;;
           esac
 
+      - name: Install UPX (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          curl.exe -sL https://github.com/upx/upx/releases/download/v5.0.0/upx-5.0.0-win64.zip -o upx.zip
+          Expand-Archive -Path upx.zip -DestinationPath .
+          $upxDir = Join-Path (Get-Location) "upx-5.0.0-win64"
+          echo "Adding UPX to PATH: $upxDir"
+          echo "$upxDir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $env:Path = "$upxDir;$env:Path"
+
       - name: Verify UPX
+        shell: bash
         run: upx --version
 
       - name: Build executable
