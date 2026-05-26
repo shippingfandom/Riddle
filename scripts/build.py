@@ -25,17 +25,14 @@ if os.path.exists(EXE):
 cmd = [
     sys.executable, "-m", "PyInstaller",
     "--onefile",
-    "--strip",
     "--name", NAME,
     "--distpath", ROOT,
     "--specpath", ROOT,
     "--clean", "--noconfirm",
 ]
 
-upx_path = shutil.which("upx")
-if upx_path:
+if upx_path := shutil.which("upx"):
     cmd.append(f"--upx-dir={os.path.dirname(upx_path)}")
-    print(f"UPX found at {upx_path} — compressing embedded files before archiving")
 
 if is_windows:
     icon = os.path.join(ROOT, "icons", "rose_flower_garden_plant_nature_icon_209857.ico")
