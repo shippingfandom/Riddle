@@ -38,6 +38,9 @@ jobs:
               ;;
           esac
 
+      - name: Verify UPX
+        run: upx --version
+
       - name: Build executable
         run: python scripts/build.py
 
