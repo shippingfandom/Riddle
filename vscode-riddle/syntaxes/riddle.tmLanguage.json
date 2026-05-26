@@ -7,13 +7,15 @@
     { "include": "#include-directive" },
     { "include": "#comment" },
     { "include": "#string" },
+    { "match": "(?<![=!<>])=(?!=)", "name": "keyword.operator.assignment.riddle" },
+    { "match": "<-", "name": "keyword.operator.assignment.riddle" },
     { "include": "#function-definition" },
     { "include": "#anonymous-function" },
     { "include": "#keyword" },
     { "include": "#builtin" },
     { "include": "#number" },
-    { "include": "#function-call" },
     { "include": "#operator" },
+    { "include": "#function-call" },
     { "include": "#identifier" },
     { "include": "#punctuation" }
   ],
@@ -67,7 +69,6 @@
     "operator": {
       "patterns": [
         { "match": "->", "name": "keyword.operator.arrow.riddle" },
-        { "match": "<-", "name": "keyword.operator.assignment.riddle" },
         { "match": "\\+\\+", "name": "keyword.operator.increment.riddle" },
         { "match": "--", "name": "keyword.operator.decrement.riddle" },
         { "match": "\\+=", "name": "keyword.operator.assignment.riddle" },
@@ -84,7 +85,6 @@
         { "match": "\\|\\|", "name": "keyword.operator.logical.riddle" },
         { "match": "<", "name": "keyword.operator.comparison.riddle" },
         { "match": ">", "name": "keyword.operator.comparison.riddle" },
-        { "match": "=", "name": "keyword.operator.assignment.riddle" },
         { "match": "!", "name": "keyword.operator.logical.riddle" },
         { "match": "\\+", "name": "keyword.operator.arithmetic.riddle" },
         { "match": "-", "name": "keyword.operator.arithmetic.riddle" },

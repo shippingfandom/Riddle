@@ -13,7 +13,9 @@ Run without arguments to start the **REPL** — an interactive prompt where you 
 |:-----|:------------|
 | `--no-attribution` | Omit the attribution header |
 | `--minify` | Collapse all whitespace and remove comments for a compact one-line output |
+| `--minify-glosure` | Minify a Glosure (.gls) file directly: strip ;; comments and collapse whitespace (no transpilation) |
 | `--no-time` | Omit the transpilation time output |
+| `--no-length` | Omit the character length output |
 | `--no-output` | Suppress transpiled code output to stdout (only applies when no output file is specified) |
 
 REPL exit commands: `//exit`, `//quit`, `//close`, Ctrl-Z/EOF.

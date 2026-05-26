@@ -25,6 +25,19 @@ jobs:
           pip install -r requirements.txt
           pip install PyInstaller
 
+      - name: Install UPX
+        shell: bash
+        run: |
+          case "${{ runner.os }}" in
+            Linux)  sudo apt-get install -y upx ;;
+            macOS)  brew install upx ;;
+            Windows)
+              curl -sL https://github.com/upx/upx/releases/download/v5.0.0/upx-5.0.0-win64.zip -o upx.zip
+              unzip -q upx.zip
+              echo "$PWD/upx-5.0.0-win64" >> "$GITHUB_PATH"
+              ;;
+          esac
+
       - name: Build executable
         run: python scripts/build.py
 
