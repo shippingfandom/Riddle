@@ -61,7 +61,7 @@ upx_path = shutil.which("upx")
 if upx_path:
     print(f"Compressing with UPX ({upx_path}) ...")
     ret = subprocess.run(
-        [upx_path, "--best", "--no-precompress", EXE],
+        [upx_path, "--best", "-f", EXE],
         capture_output=True, text=True
     )
     if ret.returncode == 0:
