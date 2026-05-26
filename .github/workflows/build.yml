@@ -44,12 +44,11 @@ jobs:
       - name: Rename for release
         run: python -c "import os,shutil; platform='${{ runner.os }}'.lower(); ext='.exe' if os.name=='nt' else ''; run_id='${{ github.run_id }}'; shutil.move(f'riddle{ext}', f'riddle-{run_id}-{platform}{ext}')"
 
-      - uses: ncipollo/release-action@v1
+      - uses: softprops/action-gh-release@v2
         with:
-          tag: riddle-${{ github.run_id }}
+          tag_name: riddle-${{ github.run_id }}
           name: Standalone Riddle Binaries ${{ github.run_id }}
-          commit: ${{ github.sha }}
-          artifacts: riddle-*
-          allowUpdates: true
-          replacesArtifacts: true
-          body: Standalone Riddle binaries for various operating systems built for you with love by Github Actions ❤️
+          target_commitish: ${{ github.sha }}
+          files: riddle-*
+          fail_on_unmatched_files: false
+          body: Standalone Riddle binaries for various operating systems built with love by GitHub Actions ❤️
