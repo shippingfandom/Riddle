@@ -68,7 +68,7 @@ jobs:
         run: |
           gh release create "riddle-${{ github.run_id }}" \
             --title "Standalone Riddle Binaries ${{ github.run_id }}" \
-            --notes "Standalone Riddle binaries for various operating systems built with love by GitHub Actions" \
+            --notes "Standalone Riddle binaries for various operating systems built with love by GitHub Actions ❤️" \
             2>/dev/null || true
           gh release upload "riddle-${{ github.run_id }}" riddle-* --clobber
         env:
