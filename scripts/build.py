@@ -31,6 +31,13 @@ cmd = [
     "--clean", "--noconfirm",
 ]
 
+upx_path = shutil.which("upx")
+if upx_path:
+    cmd.append(f"--upx-dir={os.path.dirname(upx_path)}")
+    print(f"UPX found at {upx_path}")
+else:
+    print("UPX not found — skipping compression")
+
 if is_windows:
     icon = os.path.join(ROOT, "icons", "rose_flower_garden_plant_nature_icon_209857.ico")
     if os.path.exists(icon):
