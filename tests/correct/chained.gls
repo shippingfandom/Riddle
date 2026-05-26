@@ -1,0 +1,2 @@
+(if (<= a b) (if (< b c) (if (>= c d) (if (> d e) (if (== e f) (if (!= f g) true false) false) false) false) false) false)
+(if (<= a b) (if (< b c) (if (>= c d) (if (> d e) (if (== e f) (if (!= f g) true false) false) false) false) false) false)

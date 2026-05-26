@@ -1,7 +1,7 @@
 # Riddle
 A programming language transpiled to [Glosure](https://github.com/mahocitrus/Glosure)!
 
-```Java
+```C++
 // Fibonacci series up to n
 defun Fib(n) {
     a = 0; b = 1;
@@ -15,8 +15,8 @@ Fib(1000);
 ```
 
 ## Features
-**Riddle** = **Glosure** + [MiniScript](https://miniscript.org/) + interoperability between the two! 
-- Clean, brace-style imperative syntax you're familiar with
+**Riddle** = **Glosure** + [MiniScript](https://miniscript.org/) + interoperability between the two!
+- Clean yet versatile brace-style imperative syntax you're familiar with
 - Several unique mechanics and syntax sugar to easen the programming in **Glosure**
 
 Got interested? 👀

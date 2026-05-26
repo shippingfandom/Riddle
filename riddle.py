@@ -78,13 +78,17 @@ block: "{" statement* "}"
          | and_expr "&&" cmp_expr     -> and_
 
 ?cmp_expr: add_expr
-         | cmp_expr "<" add_expr      -> lt
-         | cmp_expr ">" add_expr      -> gt
-         | cmp_expr "<=" add_expr     -> le
-         | cmp_expr ">=" add_expr     -> ge
-         | cmp_expr "==" add_expr     -> eq
-         | cmp_expr "!=" add_expr     -> ne
-         | cmp_expr "isa" add_expr    -> isa
+         | chain_cmp
+
+chain_cmp: add_expr (cmp_lt | cmp_gt | cmp_le | cmp_ge | cmp_eq | cmp_ne | cmp_isa)+
+
+cmp_lt: "<" add_expr
+cmp_gt: ">" add_expr
+cmp_le: "<=" add_expr
+cmp_ge: ">=" add_expr
+cmp_eq: "==" add_expr
+cmp_ne: "!=" add_expr
+cmp_isa: "isa" add_expr
 
 ?add_expr: mul_expr
          | add_expr "+" mul_expr      -> add
@@ -154,13 +158,15 @@ _BINARY_OPS = {
     "add_assign": "(+= {} {})", "sub_assign": "(-= {} {})",
     "mul_assign": "(*= {} {})", "div_assign": "(/= {} {})",
     "pow_assign": "(^= {} {})", "mod_assign": "(%= {} {})",
-    "lt": "(< {} {})", "gt": "(> {} {})",
-    "le": "(<= {} {})", "ge": "(>= {} {})",
-    "eq": "(== {} {})", "ne": "(!= {} {})",
     "add": "(+ {} {})", "sub": "(- {} {})",
     "mul": "(* {} {})", "div": "(/ {} {})",
     "mod": "(% {} {})", "pow": "(^ {} {})",
-    "isa": "(isa {} {})",
+}
+_CMP_OPS = {
+    "cmp_lt": "<", "cmp_gt": ">",
+    "cmp_le": "<=", "cmp_ge": ">=",
+    "cmp_eq": "==", "cmp_ne": "!=",
+    "cmp_isa": "isa",
 }
 _UNARY_PREFIX_OPS = {
     "not_": "(! {})",
@@ -594,6 +600,22 @@ class RiddleToGlosure:
             result = f"(if {op} {result} false)"
         return result
 
+    def _visit_chain_cmp(self, node):
+        children = node.children
+        left = self._visit(children[0])
+        cmps = []
+        for c in children[1:]:
+            cmps.append((_CMP_OPS[c.data], self._visit(c.children[0])))
+        if len(cmps) == 1:
+            op, right = cmps[0]
+            return f"({op} {left} {right})"
+        result = "true"
+        for i in range(len(cmps) - 1, -1, -1):
+            op, right = cmps[i]
+            l = left if i == 0 else cmps[i - 1][1]
+            result = f"(if ({op} {l} {right}) {result} false)"
+        return result
+
     def _include_directive(self, match, source_dir, seen):
         path = match.group(1)
         if not os.path.isabs(path):
@@ -784,15 +806,17 @@ def repl():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Transpile Riddle source code to Glosure. Run without arguments to start the REPL.",
-        epilog="Learn more at https://github.com/shippingfandom/Riddle!",
+        description="Transpile Riddle source code to Glosure. Run without arguments to start the REPL (0.0 )",
+        epilog="Learn more at https://github.com/shippingfandom/Riddle! (^.^ )",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("input", metavar="<input.riddle>", nargs="?", default=None, help="path to the input Riddle source file")
     parser.add_argument("output", metavar="[output.gls]", nargs="?", default=None, help="optional path to write the transpiled output")
     parser.add_argument("--no-attribution", action="store_true", help="omit the attribution header from the output")
     parser.add_argument("--minify", action="store_true", help="produce minified output without indentation or comments")
+    parser.add_argument("--minify-glosure", action="store_true", help="minify a Glosure file (strip comments and collapse whitespace, no transpilation)")
     parser.add_argument("--no-time", action="store_true", help="omit the transpilation time output")
+    parser.add_argument("--no-length", action="store_true", help="omit the character length output")
     parser.add_argument("--no-output", action="store_true", help="suppress transpiled output to stdout (only applies when no output file is specified)")
     args = parser.parse_args()
 
@@ -812,22 +836,30 @@ def main():
         sys.exit(1)
 
     transpiler = RiddleToGlosure()
-    t0 = time.perf_counter()
-    try:
-        result = transpiler.transform(source, source_path=args.input)
-    except TranspileError as e:
-        _print_error(e, file_path=args.input)
-        sys.exit(1)
-    elapsed = time.perf_counter() - t0
 
-    if not args.no_time:
-        print(f"  {Fore.GREEN}Time:{Fore.RESET} {elapsed:.3f}s", file=sys.stderr)
+    if args.minify_glosure:
+        result = transpiler._minify_output(source)
+        elapsed = 0
+    else:
+        t0 = time.perf_counter()
+        try:
+            result = transpiler.transform(source, source_path=args.input)
+        except TranspileError as e:
+            _print_error(e, file_path=args.input)
+            sys.exit(1)
+        elapsed = time.perf_counter() - t0
 
-    if not args.no_attribution:
-        result = ATTRIBUTION + result
+        if not args.no_time:
+            print(f"  {Fore.GREEN}Time:{Fore.RESET} {elapsed:.3f}s", file=sys.stderr)
+
+        if not args.no_attribution:
+            result = ATTRIBUTION + result
 
     if args.minify:
         result = transpiler._minify_output(result)
+
+    if not args.no_length:
+        print(f"  {Fore.GREEN}Length:{Fore.RESET} {len(result)} chars", file=sys.stderr)
 
     try:
         pyperclip.copy(result)
