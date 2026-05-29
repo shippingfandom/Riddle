@@ -1,9 +1,11 @@
 ;; Host function with zero arguments
 (defunction HostFZero () (begin
-    (print 'Host function with zero arguments')))
+    (print 'Host function with zero arguments')
+    ))
 ;; Glosure function with zero arguments
 (defun GlosureFZero () (begin
-    (print 'Glosure function with zero arguments')))
+    (print 'Glosure function with zero arguments')
+    ))
 ;; Host function reference
 (print (array 'HostFZero reference' HostFZero))
 ;; Glosure function referenece
@@ -14,10 +16,12 @@
 (GlosureFZero)
 ;; Host function with one argument
 (defunction HostFOne (a) (begin
-    (print (array 'Host function with one argument' a))))
+    (print (array 'Host function with one argument' a))
+    ))
 ;; Glosure function with one argument
 (defun GlosureFOne (a) (begin
-    (print (array 'Glosure function with one argument' a))))
+    (print (array 'Glosure function with one argument' a))
+    ))
 ;; Host function call
 (HostFOne 1337)
 ;; Glosure function call
@@ -25,11 +29,13 @@
 ;; Host function with one default argument
 (defunction HostFOneDefault (a) (begin
     (defaultvalue a 0)
-    (print (array 'Host function with one default argument' a))))
+    (print (array 'Host function with one default argument' a))
+    ))
 ;; Glosure function with one default argument
 (defun GlosureFOneDefault (a) (begin
     (defaultvalue a 0)
-    (print (array 'Glosure function with one default argument' a))))
+    (print (array 'Glosure function with one default argument' a))
+    ))
 ;; Host function call
 (HostFOneDefault)
 ;; Glosure function call
@@ -50,12 +56,14 @@
 ;; Namespace builtin function
 (defunction __Host (a b) (begin
     (defaultvalue b 1)
-    (+ a b)))
+    (+ a b)
+    ))
 (set (at ns 'functions') 'Host' __Host)
 ;; Namespace Glosure function
 (defunction __Glosure (a b) (begin
     (defaultvalue b 1)
-    (+ a b)))
+    (+ a b)
+    ))
 (set (at ns 'functions') 'Glosure' __Glosure)
 ;; Namespace builtin function call
 ((at (at ns 'functions') 'Host') 1 2)

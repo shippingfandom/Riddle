@@ -1,0 +1,6 @@
+defun Test() {
+    // Some comment
+}
+for i = 0; i < 10; ++i {
+    // Some comment
+}

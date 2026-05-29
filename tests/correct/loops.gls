@@ -1,10 +1,13 @@
 (def sequence (array 1 2 3 4))
 ;; for loop
 (for (def i 0) (< i ((at (def __arrow1 sequence) 'len') __arrow1)) (def i (+ i 1)) (begin
-    (print i)))
+    (print i)
+    ))
 ;; foreach loop
 (foreach idx vl sequence (begin
-    (print (array idx vl))))
+    (print (array idx vl))
+    ))
 ;; while loop
 (while ((at (def __arrow2 sequence) 'len') __arrow2) (begin
-    (print ((at sequence 'pop')))))
+    (print ((at sequence 'pop')))
+    ))

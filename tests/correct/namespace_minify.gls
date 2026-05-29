@@ -1,1 +1,1 @@
-(defun Test () (begin (defun __Test (a b) (begin (defaultvalue a 1) (defaultvalue b 'test') (print 1) (print 2))) (set Namespace 'Test' __Test) (print 3) (print 4)))
+(defun Test () (begin (defun __Test (a b) (begin (defaultvalue a 1) (defaultvalue b 'test') (print 1) (print 2) )) (set Namespace 'Test' __Test) (print 3) (print 4) ))

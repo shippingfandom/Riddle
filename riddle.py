@@ -325,15 +325,21 @@ class RiddleToGlosure:
 
     def _visit_glosure_anon(self, node):
         self._indent += 1
+        body_indent = self._indent
         params_str, body_str = self._make_function_body(node.children[0], node.children[1])
         self._indent -= 1
-        return f"(glosure ({params_str}) (begin\n{body_str}))" if body_str else f"(glosure ({params_str}) (begin))"
+        if body_str:
+            return f"(glosure ({params_str}) (begin\n{body_str}\n{INDENT * body_indent}))"
+        return f"(glosure ({params_str}) (begin))"
 
     def _visit_lambda_anon(self, node):
         self._indent += 1
+        body_indent = self._indent
         params_str, body_str = self._make_function_body(node.children[0], node.children[1])
         self._indent -= 1
-        return f"(lambda ({params_str}) (begin\n{body_str}))" if body_str else f"(lambda ({params_str}) (begin))"
+        if body_str:
+            return f"(lambda ({params_str}) (begin\n{body_str}\n{INDENT * body_indent}))"
+        return f"(lambda ({params_str}) (begin))"
 
     def _visit_return_stmt(self, node):
         return self._visit(node.children[0])
@@ -359,7 +365,7 @@ class RiddleToGlosure:
         body_str = "\n".join(body_lines)
         return params_str, body_str
 
-    def _make_method(self, keyword, dotted_name, params_str, body_str):
+    def _make_method(self, keyword, dotted_name, params_str, body_str, body_indent=0):
         parts = dotted_name.split(".")
         method_name = parts[-1]
         obj_parts = parts[:-1]
@@ -371,7 +377,10 @@ class RiddleToGlosure:
                 target = f"(at {target} '{part}')"
             set_target = target
         func_name = f"__{method_name}"
-        func_body = f"(begin\n{body_str})" if body_str else "(begin)"
+        if body_str:
+            func_body = f"(begin\n{body_str}\n{INDENT * body_indent})"
+        else:
+            func_body = "(begin)"
         func_def = f"({keyword} {func_name} ({params_str}) {func_body})"
         set_line = f"(set {set_target} '{method_name}' {func_name})"
         idt = INDENT * self._indent
@@ -384,11 +393,15 @@ class RiddleToGlosure:
         param_node = node.children[1]
         block_node = node.children[2]
         self._indent += 1
+        body_indent = self._indent
         params_str, body_str = self._make_function_body(param_node, block_node)
         self._indent -= 1
         if "." in name:
-            return self._make_method("defunction", name, params_str, body_str)
-        func_body = f"(begin\n{body_str})" if body_str else "(begin)"
+            return self._make_method("defunction", name, params_str, body_str, body_indent)
+        if body_str:
+            func_body = f"(begin\n{body_str}\n{INDENT * body_indent})"
+        else:
+            func_body = "(begin)"
         return f"(defunction {name} ({params_str}) {func_body})"
 
     def _visit_defun_def(self, node):
@@ -398,11 +411,15 @@ class RiddleToGlosure:
         param_node = node.children[1]
         block_node = node.children[2]
         self._indent += 1
+        body_indent = self._indent
         params_str, body_str = self._make_function_body(param_node, block_node)
         self._indent -= 1
         if "." in name:
-            return self._make_method("defun", name, params_str, body_str)
-        func_body = f"(begin\n{body_str})" if body_str else "(begin)"
+            return self._make_method("defun", name, params_str, body_str, body_indent)
+        if body_str:
+            func_body = f"(begin\n{body_str}\n{INDENT * body_indent})"
+        else:
+            func_body = "(begin)"
         return f"(defun {name} ({params_str}) {func_body})"
 
     def _visit_param_list(self, node):
@@ -423,8 +440,9 @@ class RiddleToGlosure:
         cond_str = self._visit(cond)
         inc_str = self._visit(inc)
         self._indent += 1
+        body_indent = self._indent
         body_str = self._visit(body)
-        result = f"(for {init_str} {cond_str} {inc_str} (begin\n{INDENT * self._indent}{body_str}))"
+        result = f"(for {init_str} {cond_str} {inc_str} (begin\n{INDENT * body_indent}{body_str}\n{INDENT * body_indent}))"
         self._indent -= 1
         return result
 
@@ -433,16 +451,18 @@ class RiddleToGlosure:
         vl = node.children[1].value
         expr_str = self._visit(node.children[2])
         self._indent += 1
+        body_indent = self._indent
         body_str = self._visit(node.children[3])
-        result = f"(foreach {idx} {vl} {expr_str} (begin\n{INDENT * self._indent}{body_str}))"
+        result = f"(foreach {idx} {vl} {expr_str} (begin\n{INDENT * body_indent}{body_str}\n{INDENT * body_indent}))"
         self._indent -= 1
         return result
 
     def _visit_while_stmt(self, node):
         cond = self._visit(node.children[0])
         self._indent += 1
+        body_indent = self._indent
         body = self._visit(node.children[1])
-        result = f"(while {cond} (begin\n{INDENT * self._indent}{body}))"
+        result = f"(while {cond} (begin\n{INDENT * body_indent}{body}\n{INDENT * body_indent}))"
         self._indent -= 1
         return result
 
@@ -450,8 +470,9 @@ class RiddleToGlosure:
         children = node.children
         cond = self._visit(children[0])
         self._indent += 1
+        then_indent = self._indent
         then_block = self._visit(children[1])
-        then_result = f"(if {cond} (begin\n{INDENT * self._indent}{then_block})"
+        then_result = f"(if {cond} (begin\n{INDENT * then_indent}{then_block}\n{INDENT * then_indent})"
         self._indent -= 1
 
         if len(children) == 2:
@@ -460,8 +481,9 @@ class RiddleToGlosure:
         remaining = children[2:]
         if len(remaining) % 2 == 1:
             self._indent += 1
+            else_indent = self._indent
             last_block = self._visit(remaining[-1])
-            rest = f"(begin\n{INDENT * self._indent}{last_block})"
+            rest = f"(begin\n{INDENT * else_indent}{last_block}\n{INDENT * else_indent})"
             self._indent -= 1
             pairs = remaining[:-1]
         else:
@@ -471,8 +493,9 @@ class RiddleToGlosure:
         for i in range(len(pairs) - 2, -1, -2):
             else_cond = self._visit(pairs[i])
             self._indent += 1
+            else_indent = self._indent
             else_block = self._visit(pairs[i + 1])
-            else_part = f"(if {else_cond} (begin\n{INDENT * self._indent}{else_block})"
+            else_part = f"(if {else_cond} (begin\n{INDENT * else_indent}{else_block}\n{INDENT * else_indent})"
             self._indent -= 1
             if rest:
                 rest = f"{else_part}\n{INDENT * self._indent}{rest})"

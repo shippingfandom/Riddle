@@ -1,0 +1,6 @@
+(defun Test () (begin
+    ;; Some comment
+    ))
+(for (def i 0) (< i 10) (++ i) (begin
+    ;; Some comment
+    ))

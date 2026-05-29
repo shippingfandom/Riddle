@@ -1,17 +1,24 @@
 ;; One branch
 (if true (begin
-    (print true)))
+    (print true)
+    ))
 ;; Two branches
 (if true (begin
-    (print true))
+    (print true)
+    )
 (begin
-    (print false)))
+    (print false)
+    ))
 ;; Multiple branches
 (if true (begin
-    (print true))
+    (print true)
+    )
 (if false (begin
-    (print false))
+    (print false)
+    )
 (if true (begin
-    (print true))
+    (print true)
+    )
 (begin
-    (print false)))))
+    (print false)
+    ))))

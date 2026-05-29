@@ -2,10 +2,19 @@
     (foreach index value collection (begin
         (if condition (begin
             (if condition (begin
-                body)
+                body
+                )
             (begin
                 (defun name (params) (begin
                     (defunction name (params) (begin
                         (lambda (params) (begin
                             (glosure (params) (begin
-                                body))))))))))))))))
+                                body
+                                ))
+                            ))
+                        ))
+                    ))
+                ))
+            ))
+        ))
+    ))

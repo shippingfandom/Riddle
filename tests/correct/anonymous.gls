@@ -1,8 +1,10 @@
 ;; Host anonymous function
 ((at somelist 'apply') (glosure (a1 a2) (begin
     (defaultvalue a2 0)
-    (print a1))))
+    (print a1)
+    )))
 ;; Glosure anonymous function
 ((at somelist 'apply') (lambda (a1 a2) (begin
     (defaultvalue a2 0)
-    (print a1))))
+    (print a1)
+    )))

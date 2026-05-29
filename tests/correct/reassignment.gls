@@ -1,6 +1,8 @@
 (def a 0)
 (= a 1)
 (for (def x 0) (< x 10) (= x (+ x 1)) (begin
-    (print x)))
+    (print x)
+    ))
 (for (def x 0) (< x 10) (++ x) (begin
-    (print x)))
+    (print x)
+    ))
