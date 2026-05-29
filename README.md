@@ -17,7 +17,9 @@ Fib(1000);
 ## Features
 **Riddle** = **Glosure** + [MiniScript](https://miniscript.org/) + interoperability between the two!
 - Clean yet versatile brace-style imperative syntax you're familiar with
-- Several unique mechanics and syntax sugar to easen the programming in **Glosure**
+- [Short-circuit evaluation](https://en.wikipedia.org/wiki/Short-circuit_evaluation)
+- Arrow calls for built-in types and for user-defined instances with `self` argument
+- The most overengineered transpiler ever... 😅
 
 Got interested? 👀
 
